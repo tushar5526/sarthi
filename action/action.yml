@@ -1,0 +1,23 @@
+name: Sarthi
+description: Easy to setup Docker based empheral previews!
+author: Tushar Gupta
+
+branding:
+  icon: check
+  color: blue
+
+runs:
+  using: docker
+  image: Dockerfile
+
+# == inputs and outputs ==
+
+inputs:
+  name:
+    required: false
+    description: the person/thing you want to greet
+    default: World
+
+outputs:
+  phrase:
+    description: output variable

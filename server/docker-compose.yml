@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: sarthi_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-confs:/etc/nginx/conf.d
