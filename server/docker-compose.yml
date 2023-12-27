@@ -8,3 +8,17 @@ services:
       - "80:80"
     volumes:
       - ./nginx-confs:/etc/nginx/conf.d
+
+  sarthi:
+    build: .
+    ports:
+      - 5000:5000
+    volumes:
+      # hack to bypass file resource sharing error to make my development easy on mac
+      - ./deployments:${DOCKER_MOUNT_DIR:-/deployments}
+      - ./nginx-confs:/nginx-confs
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      BASE_DIR: '/Users/tusharsamagra/projects/sarthi/server/deployments'
+      NGINX_PROXY_CONF_LOCATION: '/nginx-confs'
+      ENV: local

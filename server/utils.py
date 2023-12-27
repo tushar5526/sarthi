@@ -175,11 +175,12 @@ class NginxHelper:
         while current_port <= self._end_port:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 try:
-                    s.bind((self._host_name, current_port))
+                    s.connect((self._host_name, current_port))
+                    s.close()
+                    current_port += 1
+                except ConnectionRefusedError:
                     self._port = current_port
                     return current_port
-                except socket.error:
-                    current_port += 1
 
         raise RuntimeError(f"Could not find a free port in the specified range.")
 
@@ -251,7 +252,7 @@ class NginxHelper:
     def reload_nginx(self):
         self._test_nginx_config()
         subprocess.run(
-            ["docker", "exec", "-it", "sarthi_nginx", "nginx", "-s", "reload"],
+            ["docker", "exec", "sarthi_nginx", "nginx", "-s", "reload"],
             check=True,
         )
         logger.info("Nginx reloaded successfully.")

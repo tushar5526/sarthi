@@ -1,4 +1,5 @@
 pyyaml
 flask
 pyjwt
-Flask - HTTPAuth
+Flask-HTTPAuth
+python-dotenv
