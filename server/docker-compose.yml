@@ -15,10 +15,12 @@ services:
       - 5000:5000
     volumes:
       # hack to bypass file resource sharing error to make my development easy on mac
+      # docker mount dir not meant to be used on linux
+      # not tested and no support for windows server 💩
       - ./deployments:${DOCKER_MOUNT_DIR:-/deployments}
       - ./nginx-confs:/nginx-confs
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      BASE_DIR: '/Users/tusharsamagra/projects/sarthi/server/deployments'
+      BASE_DIR: ${DOCKER_MOUNT_DIR:-/deployments}
       NGINX_PROXY_CONF_LOCATION: '/nginx-confs'
       ENV: local
