@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_httpauth import HTTPTokenAuth
 
-from deployer import Deployer, DeploymentConfig
+from sarthi.deployer import Deployer, DeploymentConfig
 
 load_dotenv()
 

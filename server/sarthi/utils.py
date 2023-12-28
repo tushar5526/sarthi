@@ -252,6 +252,7 @@ class NginxHelper:
     def reload_nginx(self):
         self._test_nginx_config()
         subprocess.run(
+
             ["docker", "exec", "sarthi_nginx", "nginx", "-s", "reload"],
             check=True,
         )

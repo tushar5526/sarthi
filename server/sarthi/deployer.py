@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import typing
 
-from utils import ComposeHelper, DeploymentConfig, NginxHelper
+from .utils import ComposeHelper, DeploymentConfig, NginxHelper
 
 logger = logging.getLogger(__name__)
 
