@@ -1,8 +1,10 @@
 version: '3'
 
 services:
+  
   nginx:
     image: nginx:latest
+    restart: always
     container_name: sarthi_nginx
     ports:
       - "80:80"
@@ -13,6 +15,7 @@ services:
 
   sarthi:
     build: .
+    restart: always
     ports:
       - 5000:5000
     volumes:
@@ -29,3 +32,36 @@ services:
       NGINX_PROXY_CONF_LOCATION: ${NGINX_PROXY_CONF_LOCATION}
       ENV: ${ENV:-local}
       DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+  
+  loki:
+    image: grafana/loki:latest
+    restart: always
+    ports:
+      - 3100:3100
+    volumes:
+      - ./logging-config/loki:/etc/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    depends_on:
+      - promtail
+
+  promtail:
+    image: grafana/promtail:latest
+    restart: always
+    volumes:
+      - /var/log:/var/log
+      - ./logging-config/promtail:/etc/promtail 
+    command: -config.file=/etc/promtail/promtail-config.yaml
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana-1:/var/lib/grafana
+      - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
+
+volumes:
+  grafana:
+  grafana-1:
