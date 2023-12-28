@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 class Deployer:
     def __init__(self, config: DeploymentConfig):
         self._config = config
-        self._BASE_DIR: typing.Final[str] = os.environ.get("BASE_DIR")
+        self._DEPLOYMENTS_MOUNT_DIR: typing.Final[str] = os.environ.get("DEPLOYMENTS_MOUNT_DIR")
         self._project_path: typing.Final[str] = os.path.join(
-            self._BASE_DIR, config.get_project_hash()
+            self._DEPLOYMENTS_MOUNT_DIR, config.get_project_hash()
         )
         self._setup_project()
 

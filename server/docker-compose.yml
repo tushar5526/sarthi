@@ -6,6 +6,8 @@ services:
     container_name: sarthi_nginx
     ports:
       - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./nginx-confs:/etc/nginx/conf.d
 
@@ -17,10 +19,13 @@ services:
       # hack to bypass file resource sharing error to make my development easy on mac
       # docker mount dir not meant to be used on linux
       # not tested and no support for windows server 💩
-      - ./deployments:${DOCKER_MOUNT_DIR:-/deployments}
-      - ./nginx-confs:/nginx-confs
+      - ./deployments:${DEPLOYMENTS_MOUNT_DIR}
+      - ./nginx-confs:${NGINX_PROXY_CONF_LOCATION}
       - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      BASE_DIR: ${DOCKER_MOUNT_DIR:-/deployments}
-      NGINX_PROXY_CONF_LOCATION: '/nginx-confs'
-      ENV: local
+      DEPLOYMENTS_MOUNT_DIR: ${DEPLOYMENTS_MOUNT_DIR}
+      NGINX_PROXY_CONF_LOCATION: ${NGINX_PROXY_CONF_LOCATION}
+      ENV: ${ENV:-local}
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
