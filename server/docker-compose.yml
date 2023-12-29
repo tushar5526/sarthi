@@ -32,12 +32,16 @@ services:
       NGINX_PROXY_CONF_LOCATION: ${NGINX_PROXY_CONF_LOCATION}
       ENV: ${ENV:-local}
       DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+    depends_on:
+      - nginx
+      - vault
   
   loki:
     image: grafana/loki:latest
     restart: always
     ports:
-      - 3100:3100
+      - 127.0.0.1:3100:3100
     volumes:
       - ./logging-config/loki:/etc/loki
     command: -config.file=/etc/loki/loki-config.yaml
@@ -58,10 +62,35 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - grafana-1:/var/lib/grafana
+      - grafana:/var/lib/grafana
       - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
 
+  vault:
+    image: vault:1.12.3
+    restart: always
+    volumes:
+      - ./vault/vault.json:/vault/config/vault.json
+      - vault-secrets:/vault/file
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+      VAULT_ADDRESS: http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
+    ports:
+      - 8200:8200
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --spider http://127.0.0.1:8200/v1/sys/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   grafana:
-  grafana-1:
+  vault-secrets:

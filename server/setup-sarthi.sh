@@ -14,7 +14,7 @@ DOCKER='🐳'
 
 # Check if script is run as root
 if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}${CROSS_MARK} Please run as root.${NC}" >&2
+    echo -e "${RED}${CROSS_MARK} Please run as root or sudo.${NC}" >&2
     exit 1
 fi
 
@@ -71,8 +71,12 @@ EOF
 echo -e "${YELLOW}${POINT} Restarting Docker Daemon...${NC}"
 systemctl restart docker
 
-echo -e "${YELLOW}${POINT} Recreate All Docker Services to register logger changes${NC}"
-docker-compose up -d --force-recreate
+echo -e "${YELLOW}${POINT} Setup Hashicorp Vault and secrets ${NC}"
+bash setup-vault.sh
+
+
+echo -e "${YELLOW}${POINT} Start Sarthi 😎 ${NC}"
+docker-compose up -d nginx sarthi
 
 # Display success message
 echo -e "${GREEN}${CHECK_MARK} Docker, Docker Compose, and Loki Docker Driver installed and configured successfully.${NC}"
