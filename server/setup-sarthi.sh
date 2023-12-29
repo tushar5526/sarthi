@@ -18,29 +18,29 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# # Update package index
-# echo -e "${YELLOW}${POINT} Updating package index...${NC}"
-# apt update
+ # Update package index
+ echo -e "${YELLOW}${POINT} Updating package index...${NC}"
+ apt update
 
-# # Install prerequisites
-# echo -e "${YELLOW}${POINT} Installing prerequisites...${NC}"
-# apt install -y apt-transport-https ca-certificates curl software-properties-common
+ # Install prerequisites
+ echo -e "${YELLOW}${POINT} Installing prerequisites...${NC}"
+ apt install -y apt-transport-https ca-certificates curl software-properties-common
 
-# # Install Docker
-# echo -e "${YELLOW}${POINT} Installing Docker...${NC}"
-# curl -fsSL https://get.docker.com -o get-docker.sh
-# sh get-docker.sh
-# rm get-docker.sh
+ # Install Docker
+ echo -e "${YELLOW}${POINT} Installing Docker...${NC}"
+ curl -fsSL https://get.docker.com -o get-docker.sh
+ sh get-docker.sh
+ rm get-docker.sh
 
-# # Add user to docker group
-# echo -e "${YELLOW}${POINT} Adding user to the docker group...${NC}"
-# usermod -aG docker $USER
-# newgrp docker
+ # Add user to docker group
+ echo -e "${YELLOW}${POINT} Adding user to the docker group...${NC}"
+ usermod -aG docker $USER
+ newgrp docker
 
-# # Install Docker Compose
-# echo -e "${YELLOW}${POINT} Installing Docker Compose...${NC}"
-# curl -sSL https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-# chmod +x /usr/local/bin/docker-compose
+ # Install Docker Compose
+ echo -e "${YELLOW}${POINT} Installing Docker Compose...${NC}"
+ curl -sSL https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+ chmod +x /usr/local/bin/docker-compose
 
 # Start Grafaa + Loki services
 echo -e "${YELLOW}${POINT} Starting Loki + Grafana to export logs ${NC}"
