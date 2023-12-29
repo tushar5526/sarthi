@@ -33,6 +33,7 @@ services:
       ENV: ${ENV:-local}
       DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
       VAULT_TOKEN: ${VAULT_TOKEN}
+      VAULT_BASE_URL: ${VAULT_BASE_URL:-http://vault:8200}
     depends_on:
       - nginx
       - vault

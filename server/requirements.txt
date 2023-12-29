@@ -3,3 +3,4 @@ flask
 pyjwt
 Flask-HTTPAuth
 python-dotenv
+requests

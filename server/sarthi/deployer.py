@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import typing
 
-from .utils import ComposeHelper, DeploymentConfig, NginxHelper
+from .utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +13,9 @@ class Deployer:
     def __init__(self, config: DeploymentConfig):
         self._config = config
         self._DEPLOYMENTS_MOUNT_DIR: typing.Final[str] = os.environ.get("DEPLOYMENTS_MOUNT_DIR")
+        self._deployment_namespace = f"{self._config.project_name}_{self._config.branch_name}_{config.get_project_hash()}"
         self._project_path: typing.Final[str] = os.path.join(
-            self._DEPLOYMENTS_MOUNT_DIR, config.get_project_hash()
+            self._DEPLOYMENTS_MOUNT_DIR, self._deployment_namespace
         )
         self._setup_project()
 
@@ -22,7 +23,7 @@ class Deployer:
             os.path.join(self._project_path, config.compose_file_location)
         )
         self._nginx_helper = NginxHelper(config)
-        self._deployment_namespace = config.get_project_hash()
+        self._secrets_helper = SecretsHelper(self._config.project_name, self._config.branch_name)
         self._outer_proxy_conf_location = (
             os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
         )
@@ -75,6 +76,7 @@ class Deployer:
         )
         # TODO: Keep retrying finding a new port for race conditions
         self._project_nginx_port = self._nginx_helper.find_free_port()
+        self._secrets_helper.inject_env_variables(self._project_path)
         self._compose_helper.start_services(
             self._project_nginx_port, conf_file_path, self._deployment_namespace
         )

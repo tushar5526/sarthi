@@ -6,6 +6,7 @@ import socket
 import subprocess
 import typing
 from dataclasses import dataclass, fields
+import requests
 
 import yaml
 
@@ -257,6 +258,25 @@ class NginxHelper:
             check=True,
         )
         logger.info("Nginx reloaded successfully.")
+
+class SecretsHelper:
+    def __init__(self, project_name, branch_name):
+        self._secrets_namespace = f"{project_name}/{branch_name}"
+        self._secret_url = f"{os.environ.get('VAULT_BASE_URL')}/v1/kv/data/{self._secrets_namespace}"
+        self._headers = {
+            "X-Vault-Token": os.environ.get('VAULT_TOKEN')
+        }
+
+    def inject_env_variables(self, project_path):
+        response = requests.get(url=self._secret_url, headers=self._headers)
+        if response.status_code != 200:
+            logger.debug(f"No secrets found in vault for {self._secrets_namespace}")
+            return
+        logger.debug(f"Found secrets for {self._secrets_namespace}")
+        secret_data = response.json()
+        with open(os.path.join(project_path, ".env"), 'w') as file:
+            for key, value in secret_data['data']['data'].items():
+                file.write(f"{key}={value}\n")
 
 
 def get_random_stub(project_name: str) -> str:

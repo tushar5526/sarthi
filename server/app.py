@@ -36,8 +36,9 @@ def deploy():
 
     # Create DeploymentConfig object
     project_url_split = data.get("project_git_url").split('/')
+    project_name = f'{project_url_split[-2]}_{project_url_split[-1]}'.split('.git')[0]
     config = DeploymentConfig(
-        project_name=f'{project_url_split[-2]}_{project_url_split[-1]}',
+        project_name=project_name,
         branch_name=data.get("branch_name"),
         project_git_url=data.get("project_git_url"),
         compose_file_location=data.get("compose_file_location") or "docker-compose.yml",
