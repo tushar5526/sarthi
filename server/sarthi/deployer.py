@@ -23,7 +23,7 @@ class Deployer:
             os.path.join(self._project_path, config.compose_file_location)
         )
         self._nginx_helper = NginxHelper(config)
-        self._secrets_helper = SecretsHelper(self._config.project_name, self._config.branch_name)
+        self._secrets_helper = SecretsHelper(self._config.project_name, self._config.branch_name, self._project_path)
         self._outer_proxy_conf_location = (
             os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
         )

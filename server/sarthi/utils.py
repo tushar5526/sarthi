@@ -7,6 +7,8 @@ import subprocess
 import typing
 from dataclasses import dataclass, fields
 import requests
+import json
+from dotenv import dotenv_values
 
 import yaml
 
@@ -39,6 +41,7 @@ class ComposeHelper:
 services:
     nginx:
         image: nginx
+        restart: always
         ports: 
             - '%s:80'
         volumes:
@@ -260,17 +263,36 @@ class NginxHelper:
         logger.info("Nginx reloaded successfully.")
 
 class SecretsHelper:
-    def __init__(self, project_name, branch_name):
+    def __init__(self, project_name, branch_name, project_path):
+        self._project_path = project_path
         self._secrets_namespace = f"{project_name}/{branch_name}"
         self._secret_url = f"{os.environ.get('VAULT_BASE_URL')}/v1/kv/data/{self._secrets_namespace}"
         self._headers = {
             "X-Vault-Token": os.environ.get('VAULT_TOKEN')
         }
 
+    def _create_env_placeholder(self):
+        sample_envs = {"key": "secret-value"}
+        # check for .env.sample in folder and load those sample .env vars in vault
+        sample_env_path = os.path.join(self._project_path, '.env.sample')
+        if os.path.exists(sample_env_path):
+            sample_envs = dotenv_values(sample_env_path)
+
+        sample_env_path = os.path.join(self._project_path, 'sample.env')
+        if os.path.exists(sample_env_path):
+            sample_envs = dotenv_values(sample_env_path)
+
+        response = requests.post(url=self._secret_url, headers=self._headers, data=json.dumps({
+            "data": {key: value for key, value in sample_envs.items()}
+        }))
+        response.raise_for_status()
+        logger.debug(f"Successfully loaded sample env vars in value {response.json()}")
+
     def inject_env_variables(self, project_path):
         response = requests.get(url=self._secret_url, headers=self._headers)
         if response.status_code != 200:
             logger.debug(f"No secrets found in vault for {self._secrets_namespace}")
+            self._create_env_placeholder()
             return
         logger.debug(f"Found secrets for {self._secrets_namespace}")
         secret_data = response.json()
