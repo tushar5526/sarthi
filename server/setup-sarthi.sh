@@ -42,6 +42,28 @@ fi
  curl -sSL https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
  chmod +x /usr/local/bin/docker-compose
 
+# Creating .env file
+echo -e "${YELLOW}${POINT} Creating .env file${NC}"
+
+echo -e "DEPLOYMENTS_MOUNT_DIR='$PWD/deployments' # DO NOT EDIT THIS" >> .env
+echo -e "NGINX_PROXY_CONF_LOCATION='$PWD/nginx-confs' # DO NOT EDIT THIS" >> .env
+
+# Prompt user for ENV variable
+read -p "Enter ENV (default: local (local will set logging to ALL)): " ENV
+ENV=${ENV:-local}
+
+# Prompt user for DOMAIN_NAME variable
+read -p "Enter DOMAIN_NAME (default: localhost | example: sarthi.youcompany.io | 👋 Make sure to have a wildcard domain name on the public IP): " DOMAIN_NAME
+DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+
+read -p "Enter SECRET_TEXT: " SECRET_TEXT
+SECRET_TEXT=${SECRET_TEXT:-random_secure_text_for_auth}
+
+# Create or update .env file
+echo "ENV='$ENV'" >> .env
+echo "DOMAIN_NAME='$DOMAIN_NAME'" >> .env
+echo "SECRET_TEXT='$SECRET_TEXT'" >> .env
+
 # Start Grafaa + Loki services
 echo -e "${YELLOW}${POINT} Starting Loki + Grafana to export logs ${NC}"
 docker-compose up -d promtail loki grafana
