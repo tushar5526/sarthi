@@ -21,7 +21,7 @@ def main() -> None:
     #     sarthi_server_url=sarthi_server_url,
     # )
 
-    comment_on_gh_pr("Hey boooyy")
+    comment_on_gh_pr("Hey boooyy!!!!")
 
 if __name__ == "__main__":
     main()
