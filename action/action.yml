@@ -10,14 +10,14 @@ runs:
   using: docker
   image: Dockerfile
 
-# == inputs and outputs ==
-
 inputs:
-  name:
+  sarthi_server_url:
+    required: true
+    description: URL of the deployed sarthi server
+  compose_file:
     required: false
-    description: the person/thing you want to greet
-    default: World
-
-outputs:
-  phrase:
-    description: output variable
+    description: Name of docker compose file in your project
+    default: docker-compose.yml
+  sarthi_secret:
+    required: true
+    description: Secret text for authentication

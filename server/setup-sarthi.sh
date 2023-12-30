@@ -56,8 +56,18 @@ ENV=${ENV:-local}
 read -p "Enter DOMAIN_NAME (default: localhost | example: sarthi.youcompany.io | 👋 Make sure to have a wildcard domain name on the public IP): " DOMAIN_NAME
 DOMAIN_NAME=${DOMAIN_NAME:-localhost}
 
-read -p "Enter SECRET_TEXT: " SECRET_TEXT
-SECRET_TEXT=${SECRET_TEXT:-random_secure_text_for_auth}
+read -p "Enter SECRET_TEXT (or press Enter for a default): " SECRET_TEXT
+
+
+read -p "Enter SECRET_TEXT (or press Enter to generate a random secret): " SECRET_TEXT
+
+# Check if the user entered anything
+if [ -z "$SECRET_TEXT" ]; then
+    # Generate a random secret text if not specified
+    SECRET_TEXT=$(openssl rand -base64 32)
+    echo "🚀 Default secret text generated: $SECRET_TEXT"
+    echo "Please specify this secret in your Github Actions 👆"
+fi
 
 # Create or update .env file
 echo "ENV='$ENV'" >> .env
