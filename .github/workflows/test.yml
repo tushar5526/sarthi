@@ -15,5 +15,5 @@ jobs:
       - name: Run action
         uses: ./action
         with:
-          name: 'John'
+          name: 'John.'
           repo_url: ${{github.event.pull_request.head.repo.full_name}}
