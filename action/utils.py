@@ -21,7 +21,6 @@ def comment_on_gh_pr(comment):
     }
 
     data = {"body": comment}
-
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
 

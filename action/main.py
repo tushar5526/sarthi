@@ -14,14 +14,16 @@ def main() -> None:
     sarthi_secret = os.environ.get("INPUT_SARTHI_SECRET")
     sarthi_server_url = os.environ.get("INPUT_SARTHI_SERVER_URL")
 
-    # service_urls = deploy(
-    #     project_git_url=project_url,
-    #     branch=branch_name,
-    #     sarthi_secret=sarthi_secret,
-    #     sarthi_server_url=sarthi_server_url,
-    # )
-
-    comment_on_gh_pr("Hey boooyy!!!!")
+    service_urls = deploy(
+        project_git_url=project_url,
+        branch=branch_name,
+        sarthi_secret=sarthi_secret,
+        sarthi_server_url=sarthi_server_url,
+    )
+    comment = ""
+    for urls in service_urls:
+        comment += urls + "\n"
+    comment_on_gh_pr(f"Hello From Sarthi!!!!\n" + comment)
 
 if __name__ == "__main__":
     main()
