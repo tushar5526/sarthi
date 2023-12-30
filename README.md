@@ -4,7 +4,7 @@ Easy to setup Docker based empheral previewss!
 
 ### Usage
 ```yml
-example usage..
+example usage...
 ```
 
 ### License
