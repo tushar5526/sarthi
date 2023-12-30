@@ -8,14 +8,16 @@ import requests
 def comment_on_gh_pr(comment):
     GITHUB_API_URL = os.environ.get("GITHUB_API_URL")
     GITHUB_TOKEN = os.environ.get('INPUT_GITHUB_TOKEN')
-
+    if not GITHUB_TOKEN:
+        raise Exception("INVALID GITHUB TOKEN _ EMPTY")
     pr_number = os.environ.get("GITHUB_REF_NAME").split('/')[0]
 
     url = f"{GITHUB_API_URL}/repos/{os.environ.get('GITHUB_REPOSITORY')}/issues/{pr_number}/comments"
 
     headers = {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Accept": "application/vnd.github+json"
     }
 
     data = {"body": comment}
