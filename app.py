@@ -30,7 +30,7 @@ def verify_token(token):
 
 # Your deployment endpoint
 @app.route("/deploy", methods=["POST"])
-# @auth.login_required
+@auth.login_required
 def deploy():
     data = request.get_json()
 
