@@ -1,7 +1,8 @@
 # Sarthi
 
-Sarthi allows you to quickly setup Ephemeral Preview Environments. Easy installation using a script and never touch your server again. 
-Sarthi is build up on other OSS projects to exports logs, enable monitoring and create preview environments.
+Sarthi lets you set up Ephemeral Preview Environments quickly. 
+Install it easily with a script and forget about server management. 
+Sarthi is built on open-source projects for exporting logs, enabling monitoring, and creating preview environments.
 
 You can you use the [sarthi-deploy]() GitHub Action for setting up preview environments for your branches / PR.
 
