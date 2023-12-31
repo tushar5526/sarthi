@@ -1,51 +1,98 @@
-version: "3"
+version: '3'
 
 services:
-  backend:
-    container_name: infisical-backend
-    restart: unless-stopped
-    depends_on:
-      - mongo
-    image: infisical/infisical:latest
-    env_file: .env
-    ports:
-      - 80:8080
-    environment:
-      - NODE_ENV=production
-    networks:
-      - infisical
-
-  redis:
-    image: redis
-    container_name: infisical-dev-redis
-    env_file: .env
-    environment:
-      - ALLOW_EMPTY_PASSWORD=yes
-    ports:
-      - 6379:6379
-    networks:
-      - infisical
-    volumes:
-      - redis_data:/data
-
-  mongo:
-    container_name: infisical-mongo
-    image: mongo
+  
+  nginx:
+    image: nginx:latest
     restart: always
-    env_file: .env
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    container_name: sarthi_nginx
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - mongo-data:/data/db
-    networks:
-      - infisical
+      - ./nginx-confs:/etc/nginx/conf.d
+
+  sarthi:
+    build: .
+    restart: always
+    ports:
+      - 5000:5000
+    volumes:
+      # hack to bypass file resource sharing error to make my development easy on mac
+      # docker mount dir not meant to be used on linux
+      # not tested and no support for windows server 💩
+      - ./deployments:${DEPLOYMENTS_MOUNT_DIR}
+      - ./nginx-confs:${NGINX_PROXY_CONF_LOCATION}
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DEPLOYMENTS_MOUNT_DIR: ${DEPLOYMENTS_MOUNT_DIR}
+      NGINX_PROXY_CONF_LOCATION: ${NGINX_PROXY_CONF_LOCATION}
+      ENV: ${ENV:-local}
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+      VAULT_BASE_URL: ${VAULT_BASE_URL:-http://vault:8200}
+    depends_on:
+      - nginx
+      - vault
+  
+  loki:
+    image: grafana/loki:latest
+    restart: always
+    ports:
+      - 127.0.0.1:3100:3100
+    volumes:
+      - ./logging-config/loki:/etc/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    depends_on:
+      - promtail
+
+  promtail:
+    image: grafana/promtail:latest
+    restart: always
+    volumes:
+      - /var/log:/var/log
+      - ./logging-config/promtail:/etc/promtail 
+    command: -config.file=/etc/promtail/promtail-config.yaml
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
+
+  vault:
+    image: vault:1.12.3
+    restart: always
+    volumes:
+      - ./vault/vault.json:/vault/config/vault.json
+      - vault-secrets:/vault/file
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+      VAULT_ADDRESS: http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
+    ports:
+      - 8200:8200
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --spider http://127.0.0.1:8200/v1/sys/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
-  mongo-data:
-    driver: local
-  redis_data:
-    driver: local
-
-networks:
-  infisical:
+  grafana:
+  vault-secrets:
