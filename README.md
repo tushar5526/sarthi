@@ -1,20 +1,48 @@
-## Sarthi <img alt="action-badge" src="https://img.shields.io/badge/Sarthi-white?logo=github-actions&label=GitHub%20Action&labelColor=white&color=0064D7"> <a href="https://github.com/lnxpy/cookiecutter-pyaction"><img alt="cookiecutter-pyaction" src="https://img.shields.io/badge/cookiecutter--pyaction-white?logo=cookiecutter&label=Made%20with&labelColor=white&color=0064D7"></a>
+# Sarthi
 
-Easy to setup Docker based empheral previews!
+Sarthi allows you to quickly setup Ephemeral Preview Environments. Install it one time on your server using a script 
+and never touch your server again. Sarthi uses other OSS projects to exports logs, provides monitoring and create preview
+environments right out of the box. 
 
-### Usage
-```yml
-example usage..
+You can you use the [sarthi-deploy]() GitHub Action for setting up preview environments for your branches / PR.
+
+## Pre-requisites
+
+1. Dockerized projects with a `docker-compose`.
+   a. It is MANDATORY to have a `docker-compose` file at the root of project's folder. 
+2. A public Linux machine (preferred Ubuntu 20+ LTS versions) and user with root access. 
+3. A wildcard subdomain pointing to the above machine (*.sarthi.your-domain.io)
+
+## Setup Instructions
+
+1. SSH into your server and clone the project. 
+```commandline
+git clone https://github.com/tushar5526/sarthi.git
 ```
+
+2. Run the setup script.
+```commandline
+chmod +x setup-sarthi.sh
+chmod +x setup-vault.sh
+sudo ./setup-sarthi.sh
+```
+
+3. Follow the prompts and specify the values, you will be requested to specify the wild card domain name created earlier.
+   (using localhost is possible, but that would require setting up `dnsmaq`)
+
+Services Installed
+------------------
+
+1. Grafana + Loki to export service logs from the deployed environments. 
+2. Portainer for admin access to docker containers. 
+3. Hashicorp Vault to specify environment secrets. 
+   a. For each deployed branch/PR a path will be created by default in the vault where users can specify their secrets.
+   b. Vault's secret token should be present in a keys.txt folder in the repo
+
+Tips
+----
+1. Use docker-compose's service discovery to connect within same services in the project. 
+
 
 ### License
 This action is licensed under some specific terms. Check [here](LICENSE) for more information.
-
-
-# TODOs
-
-1. Setup GHA 
-2. Create a nginx config for exposed services
-3. Tests
-4. Add in portainer as well
-5. End the script with message for users on the services installed!

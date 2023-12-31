@@ -17,6 +17,6 @@ venv.bak/
 
 .idea**
 
-server/deployments/*
-server/nginx-confs/*
-keys.txt
+deployments/*
+nginx-confs/*
+*.txt
