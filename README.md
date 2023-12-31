@@ -4,19 +4,18 @@ Sarthi lets you set up Ephemeral Preview Environments quickly.
 Install it easily with a script and forget about server management. 
 Sarthi is built on open-source projects for exporting logs, enabling monitoring, and creating preview environments.
 
-You can you use the [sarthi-deploy]() GitHub Action for setting up preview environments for your branches / PR.
+You can you use the [sarthi-deploy](https://github.com/tushar5526/sarthi-deploy) GitHub Action for setting up preview environments for your branches / PR.
 
 Pre-requisites 🛠️
 -------------------
 
 1. Dockerized projects with a `docker-compose`.
-   - It is MANDATORY to have a `docker-compose` file at the root of project's folder. 
+   - It is **MANDATORY** to have a `docker-compose` file at the root of project's folder. 
 2. A public Linux machine (preferred Ubuntu 20+ LTS versions) and user with root access. 
 3. A wildcard subdomain pointing to the above machine (*.sarthi.your-domain.io)
 
 Setup Instructions ⚙️
 ------------------------
-
 
 1. SSH into your server and clone the project. 
 ```commandline
@@ -44,7 +43,7 @@ Services Installed 🤖
 
 Tips 💡
 -------
-1. Use docker-compose's service discovery to connect within same services in the project. 
+1. Use `docker-compose's` service discovery to connect within same services in the project. 
 
 
 ### License 📄
