@@ -13,8 +13,8 @@ This action is licensed under some specific terms. Check [here](LICENSE) for mor
 
 # TODOs
 
-1. Grafana + Loki + Prometheus Setup in docker compose
-2. Dockerize the project
-3. Vault Setup
-4. GitHub Actions Setup
-5. Tests
+1. Setup GHA 
+2. Create a nginx config for exposed services
+3. Tests
+4. Add in portainer as well
+5. End the script with message for users on the services installed!
