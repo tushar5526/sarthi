@@ -5,7 +5,7 @@ Sarthi is build up on other OSS projects to exports logs, enable monitoring and 
 
 You can you use the [sarthi-deploy]() GitHub Action for setting up preview environments for your branches / PR.
 
-# Pre-requisites 🛠️
+Pre-requisites 🛠️
 -------------------
 
 1. Dockerized projects with a `docker-compose`.
@@ -13,7 +13,7 @@ You can you use the [sarthi-deploy]() GitHub Action for setting up preview envir
 2. A public Linux machine (preferred Ubuntu 20+ LTS versions) and user with root access. 
 3. A wildcard subdomain pointing to the above machine (*.sarthi.your-domain.io)
 
-## Setup Instructions ⚙️
+Setup Instructions ⚙️
 ------------------------
 
 
