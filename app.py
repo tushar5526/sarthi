@@ -29,7 +29,7 @@ def verify_token(token):
 
 
 # Your deployment endpoint
-@app.route("/deploy", methods=["POST"])
+@app.route("/deploy", methods=["POST", "DELETE"])
 @auth.login_required
 def deploy():
     data = request.get_json()
@@ -45,8 +45,13 @@ def deploy():
     )
 
     deployer = Deployer(config)
-    urls = deployer.deploy()
-    return jsonify(urls)
+    if request.method == "POST":
+        urls = deployer.deploy_preview_environment()
+        return jsonify(urls)
+    elif request.method == "DELETE":
+        deployer.delete_preview_environment()
+    else:
+        return jsonify({"error": "Invalid HTTP method. Supported methods: POST, DELETE"}), 405
 
 
 if __name__ == "__main__":

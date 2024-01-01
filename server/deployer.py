@@ -82,7 +82,19 @@ class Deployer:
         )
         return urls
 
-    def deploy(self):
+    def _remove_outer_proxy(self):
+        os.remove(self._outer_proxy_conf_location)
+        self._nginx_helper.reload_nginx()
+
+    def _remove_services(self):
+        pass
+
+
+    def deploy_preview_environment(self):
         urls = self._deploy_project()
         self._configure_outer_proxy()
         return urls
+
+    def delete_preview_environment(self):
+        self._remove_services()
+        self._remove_outer_proxy()

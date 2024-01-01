@@ -66,6 +66,12 @@ services:
         subprocess.run(command, check=True, cwd=project_dir)
         logger.info("Docker Compose up -d --build executed successfully.")
 
+    def stop_services(self):
+        command = ["docker-compose", "down", "-v"]
+        project_dir = pathlib.Path(self._compose_file_location).parent
+        subprocess.run(command, check=True, cwd=project_dir)
+        logger.info("Docker Compose down -v executed successfully.")
+
     def _generate_processed_compose_file(
         self, nginx_port: str, conf_file_path: str, deployment_namespace: str
     ):
