@@ -16,13 +16,13 @@ if os.environ.get("ENV").lower() == "local":
 
 app = Flask(__name__)
 auth = HTTPTokenAuth("Bearer")
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+app.config["SECRET_TEXT"] = os.environ.get("SECRET_TEXT")
 
 
 @auth.verify_token
 def verify_token(token):
     try:
-        data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+        data = jwt.decode(token, app.config["SECRET_TEXT"], algorithms=["HS256"])
         logging.debug(f"Authenticated successfully {data}")
     except Exception as e:  # noqa: E722
         logging.debug(f"Error while authenticating {e}")
