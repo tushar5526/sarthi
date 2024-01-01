@@ -23,9 +23,11 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 def verify_token(token):
     try:
         data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-    except:  # noqa: E722
+        logging.debug(f"Authenticated successfully {data}")
+    except Exception as e:  # noqa: E722
+        logging.debug(f"Error while authenticating {e}")
         return False
-    return "root"
+    return True
 
 
 # Your deployment endpoint
