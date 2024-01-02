@@ -88,6 +88,8 @@ services:
             if "container_name" in self._compose["services"][service]:
                 del self._compose["services"][service]["container_name"]
 
+            self._compose["services"][service]["restart"] = "always"
+
         service_proxy_template = ComposeHelper.NGINX_SERVICE_TEMPLATE % (
             nginx_port,
             conf_file_path,
