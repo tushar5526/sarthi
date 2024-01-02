@@ -44,6 +44,7 @@ def deploy():
         branch_name=data.get("branch"),
         project_git_url=data.get("project_git_url"),
         compose_file_location=data.get("compose_file_location") or "docker-compose.yml",
+        rest_action=request.method,
     )
 
     deployer = Deployer(config)
@@ -52,6 +53,10 @@ def deploy():
         return jsonify(urls)
     elif request.method == "DELETE":
         deployer.delete_preview_environment()
+        return (
+            jsonify({"message": "Removed preview environment"}),
+            200,
+        )
     else:
         return (
             jsonify({"error": "Invalid HTTP method. Supported methods: POST, DELETE"}),

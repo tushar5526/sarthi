@@ -21,6 +21,7 @@ class DeploymentConfig:
     branch_name: str
     project_git_url: str
     compose_file_location: str = "docker-compose.yml"
+    rest_action: str = "POST"
 
     def __post_init__(self):
         # Check if all members are specified
@@ -86,6 +87,8 @@ services:
 
             if "container_name" in self._compose["services"][service]:
                 del self._compose["services"][service]["container_name"]
+
+            self._compose["services"][service]["restart"] = "always"
 
         service_proxy_template = ComposeHelper.NGINX_SERVICE_TEMPLATE % (
             nginx_port,
@@ -176,6 +179,7 @@ class NginxHelper:
         deployment_project_path: str,
     ):
         self._project_name = config.project_name
+        self._branch_name = config.branch_name
         self._project_hash = config.get_project_hash()
         self._port = None
         self._host_name = os.environ.get("DEPLOYMENT_HOST") or "host.docker.internal"
@@ -238,7 +242,7 @@ class NginxHelper:
                     ports[1],
                 )
 
-                service_url = f"{self._project_name}-{ports[0]}-{self._project_hash}.{self._DOMAIN_NAME}"
+                service_url = f"{self._project_name}-{self._branch_name}-{ports[0]}-{self._project_hash}.{self._DOMAIN_NAME}"
                 server_name_regex = f"~{service_url}"
                 urls.append(f"http://{service_url}")
 
