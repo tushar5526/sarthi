@@ -53,6 +53,10 @@ def deploy():
         return jsonify(urls)
     elif request.method == "DELETE":
         deployer.delete_preview_environment()
+        return (
+            jsonify({"Removed preview environment"}),
+            200,
+        )
     else:
         return (
             jsonify({"error": "Invalid HTTP method. Supported methods: POST, DELETE"}),

@@ -95,7 +95,7 @@ class Deployer:
 
     def _delete_deployment_files(self):
         try:
-            os.remove(self._project_path)
+            shutil.rmtree(self._project_path)
         except Exception as e:
             logger.debug(f"Error removing deployment files {e}")
 
