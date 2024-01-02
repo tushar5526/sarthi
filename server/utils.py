@@ -241,7 +241,7 @@ class NginxHelper:
                 )
 
                 service_url = f"{self._project_name}-{self._branch_name}-{ports[0]}-{self._project_hash}.{self._DOMAIN_NAME}"
-                server_name_regex = f"={service_url}"
+                server_name_regex = f"~{service_url}"
                 urls.append(f"http://{service_url}")
 
                 server_block = NginxHelper.SERVER_BLOCK_TEMPLATE % (
