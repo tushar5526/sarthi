@@ -43,7 +43,7 @@ Services Installed 🤖
 
 Tips 💡
 -------
-1. Use `docker-compose's` service discovery to connect within same services in the project. 
+1. Use `docker-compose's` service discovery to connect within same services in your projects. 
 
 
 ### License 📄
