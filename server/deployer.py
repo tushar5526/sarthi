@@ -19,7 +19,9 @@ class Deployer:
         self._project_path: typing.Final[str] = os.path.join(
             self._DEPLOYMENTS_MOUNT_DIR, self._deployment_namespace
         )
-        self._setup_project()
+
+        if config.rest_action != "DELETE":
+            self._setup_project()
 
         self._compose_helper = ComposeHelper(
             os.path.join(self._project_path, config.compose_file_location)

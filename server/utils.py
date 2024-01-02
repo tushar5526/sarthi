@@ -21,6 +21,7 @@ class DeploymentConfig:
     branch_name: str
     project_git_url: str
     compose_file_location: str = "docker-compose.yml"
+    rest_action: str = "POST"
 
     def __post_init__(self):
         # Check if all members are specified
