@@ -54,7 +54,7 @@ def deploy():
     elif request.method == "DELETE":
         deployer.delete_preview_environment()
         return (
-            jsonify({"Removed preview environment"}),
+            jsonify({"message": "Removed preview environment"}),
             200,
         )
     else:
