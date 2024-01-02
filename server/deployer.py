@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 class Deployer:
     def __init__(self, config: DeploymentConfig):
         self._config = config
-        self._DEPLOYMENTS_MOUNT_DIR: typing.Final[str] = os.environ.get("DEPLOYMENTS_MOUNT_DIR")
+        self._DEPLOYMENTS_MOUNT_DIR: typing.Final[str] = os.environ.get(
+            "DEPLOYMENTS_MOUNT_DIR"
+        )
         self._deployment_namespace = f"{self._config.project_name}_{self._config.branch_name}_{config.get_project_hash()}"
         self._project_path: typing.Final[str] = os.path.join(
             self._DEPLOYMENTS_MOUNT_DIR, self._deployment_namespace
@@ -22,10 +24,14 @@ class Deployer:
         self._compose_helper = ComposeHelper(
             os.path.join(self._project_path, config.compose_file_location)
         )
-        self._nginx_helper = NginxHelper(config)
-        self._secrets_helper = SecretsHelper(self._config.project_name, self._config.branch_name, self._project_path)
+        self._secrets_helper = SecretsHelper(
+            self._config.project_name, self._config.branch_name, self._project_path
+        )
         self._outer_proxy_conf_location = (
             os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
+        )
+        self._nginx_helper = NginxHelper(
+            config, self._outer_proxy_conf_location, self._project_path
         )
 
     def _clone_project(self):
@@ -64,15 +70,13 @@ class Deployer:
     def _configure_outer_proxy(self):
         if not self._project_nginx_port:
             raise Exception("Project Proxy not deployed, project_nginx_port is None")
-        self._nginx_helper.generate_outer_proxy_conf_file(
-            self._project_nginx_port, self._outer_proxy_conf_location
-        )
+        self._nginx_helper.generate_outer_proxy_conf_file(self._project_nginx_port)
         self._nginx_helper.reload_nginx()
 
     def _deploy_project(self):
         services = self._compose_helper.get_service_ports_config()
         conf_file_path, urls = self._nginx_helper.generate_project_proxy_conf_file(
-            services, self._project_path
+            services
         )
         # TODO: Keep retrying finding a new port for race conditions
         self._project_nginx_port = self._nginx_helper.find_free_port()
@@ -82,19 +86,19 @@ class Deployer:
         )
         return urls
 
-    def _remove_outer_proxy(self):
-        os.remove(self._outer_proxy_conf_location)
-        self._nginx_helper.reload_nginx()
-
-    def _remove_services(self):
-        pass
-
-
     def deploy_preview_environment(self):
         urls = self._deploy_project()
         self._configure_outer_proxy()
         return urls
 
+    def _delete_deployment_files(self):
+        try:
+            os.remove(self._project_path)
+        except Exception as e:
+            logger.debug(f"Error removing deployment files {e}")
+
     def delete_preview_environment(self):
-        self._remove_services()
-        self._remove_outer_proxy()
+        self._compose_helper.remove_services()
+        self._nginx_helper.remove_outer_proxy()
+        self._nginx_helper.reload_nginx()
+        self._delete_deployment_files()

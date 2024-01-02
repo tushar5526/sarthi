@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 import os
 import pathlib
@@ -6,11 +7,10 @@ import socket
 import subprocess
 import typing
 from dataclasses import dataclass, fields
-import requests
-import json
-from dotenv import dotenv_values
 
+import requests
 import yaml
+from dotenv import dotenv_values
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ services:
         subprocess.run(command, check=True, cwd=project_dir)
         logger.info("Docker Compose up -d --build executed successfully.")
 
-    def stop_services(self):
+    def remove_services(self):
         command = ["docker-compose", "down", "-v"]
         project_dir = pathlib.Path(self._compose_file_location).parent
         subprocess.run(command, check=True, cwd=project_dir)
@@ -169,7 +169,12 @@ class NginxHelper:
     }   
     """
 
-    def __init__(self, config: DeploymentConfig):
+    def __init__(
+        self,
+        config: DeploymentConfig,
+        outer_conf_base_path: str,
+        deployment_project_path: str,
+    ):
         self._project_name = config.project_name
         self._project_hash = config.get_project_hash()
         self._port = None
@@ -178,6 +183,15 @@ class NginxHelper:
         self._end_port = os.environ.get("DEPLOYMENT_PORT_END") or 20000
         self._DOMAIN_NAME = os.environ.get("DOMAIN_NAME") or "localhost"
         self._DOCKER_INTERNAL_HOSTNAME: typing.Final[str] = "host.docker.internal"
+        self._outer_conf_base_path = outer_conf_base_path
+        self._deployment_project_path = deployment_project_path
+        self._conf_file_name = f"{self._project_name}-{self._project_hash}.conf"
+        self._outer_proxy_path = os.path.join(
+            self._outer_conf_base_path, self._conf_file_name
+        )
+        self._deployment_proxy_path = os.path.join(
+            self._deployment_project_path, self._conf_file_name
+        )
 
     def find_free_port(self) -> str:
         current_port = self._start_port
@@ -194,9 +208,7 @@ class NginxHelper:
 
         raise RuntimeError(f"Could not find a free port in the specified range.")
 
-    def generate_outer_proxy_conf_file(
-        self, port: str, project_conf_location: str
-    ) -> str:
+    def generate_outer_proxy_conf_file(self, port: str) -> str:
         port = port or self._port
         server_name_regex = f"~{self._project_hash}.{self._DOMAIN_NAME}"
         conf = NginxHelper.PROJECT_BLOCK_TEMPLATE % (
@@ -204,21 +216,18 @@ class NginxHelper:
             self._DOCKER_INTERNAL_HOSTNAME,
             port,
         )
-        conf_file_name = f"{self._project_name}-{self._project_hash}.conf"
-        conf_file_location = os.path.join(project_conf_location, conf_file_name)
 
-        with open(conf_file_location, "w") as file:
+        with open(self._outer_proxy_path, "w") as file:
             file.write(conf)
 
         if not self._test_nginx_config():
-            os.remove(conf_file_location)
+            os.remove(self._outer_proxy_path)
             raise Exception("Failed creating outer_proxy_conf_file", conf)
         return conf
 
     def generate_project_proxy_conf_file(
         self,
         services: typing.Dict[str, typing.List[typing.Tuple[int, int]]],
-        project_path: str,
     ) -> typing.Tuple[str, typing.List[str]]:
         urls: typing.List[str] = []
         routes = ""
@@ -239,12 +248,10 @@ class NginxHelper:
                 )
                 routes += server_block
 
-        conf_file_name = f"{self._project_name}-{self._project_hash}.conf"
-        conf_file_path = os.path.join(project_path, conf_file_name)
-        with open(conf_file_path, "w") as file:
+        with open(self._deployment_proxy_path, "w") as file:
             file.write(routes)
 
-        return str(conf_file_path), urls
+        return str(self._deployment_proxy_path), urls
 
     def _test_nginx_config(self):
         try:
@@ -262,35 +269,45 @@ class NginxHelper:
     def reload_nginx(self):
         self._test_nginx_config()
         subprocess.run(
-
             ["docker", "exec", "sarthi_nginx", "nginx", "-s", "reload"],
             check=True,
         )
         logger.info("Nginx reloaded successfully.")
 
+    def remove_outer_proxy(self):
+        try:
+            os.remove(self._outer_proxy_path)
+        except Exception as e:
+            logger.debug(f"Exception removing outer proxy {e}")
+
+
 class SecretsHelper:
     def __init__(self, project_name, branch_name, project_path):
         self._project_path = project_path
         self._secrets_namespace = f"{project_name}/{branch_name}"
-        self._secret_url = f"{os.environ.get('VAULT_BASE_URL')}/v1/kv/data/{self._secrets_namespace}"
-        self._headers = {
-            "X-Vault-Token": os.environ.get('VAULT_TOKEN')
-        }
+        self._secret_url = (
+            f"{os.environ.get('VAULT_BASE_URL')}/v1/kv/data/{self._secrets_namespace}"
+        )
+        self._headers = {"X-Vault-Token": os.environ.get("VAULT_TOKEN")}
 
     def _create_env_placeholder(self):
         sample_envs = {"key": "secret-value"}
         # check for .env.sample in folder and load those sample .env vars in vault
-        sample_env_path = os.path.join(self._project_path, '.env.sample')
+        sample_env_path = os.path.join(self._project_path, ".env.sample")
         if os.path.exists(sample_env_path):
             sample_envs = dotenv_values(sample_env_path)
 
-        sample_env_path = os.path.join(self._project_path, 'sample.env')
+        sample_env_path = os.path.join(self._project_path, "sample.env")
         if os.path.exists(sample_env_path):
             sample_envs = dotenv_values(sample_env_path)
 
-        response = requests.post(url=self._secret_url, headers=self._headers, data=json.dumps({
-            "data": {key: value for key, value in sample_envs.items()}
-        }))
+        response = requests.post(
+            url=self._secret_url,
+            headers=self._headers,
+            data=json.dumps(
+                {"data": {key: value for key, value in sample_envs.items()}}
+            ),
+        )
         response.raise_for_status()
         logger.debug(f"Successfully loaded sample env vars in value {response.json()}")
 
@@ -302,8 +319,8 @@ class SecretsHelper:
             return
         logger.debug(f"Found secrets for {self._secrets_namespace}")
         secret_data = response.json()
-        with open(os.path.join(project_path, ".env"), 'w') as file:
-            for key, value in secret_data['data']['data'].items():
+        with open(os.path.join(project_path, ".env"), "w") as file:
+            for key, value in secret_data["data"]["data"].items():
                 file.write(f"{key}={value}\n")
 
 

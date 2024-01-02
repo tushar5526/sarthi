@@ -37,8 +37,8 @@ def deploy():
     data = request.get_json()
 
     # Create DeploymentConfig object
-    project_url_split = data.get("project_git_url").split('/')
-    project_name = f'{project_url_split[-2]}_{project_url_split[-1]}'.split('.git')[0]
+    project_url_split = data.get("project_git_url").split("/")
+    project_name = f"{project_url_split[-2]}_{project_url_split[-1]}".split(".git")[0]
     config = DeploymentConfig(
         project_name=project_name,
         branch_name=data.get("branch"),
@@ -53,7 +53,10 @@ def deploy():
     elif request.method == "DELETE":
         deployer.delete_preview_environment()
     else:
-        return jsonify({"error": "Invalid HTTP method. Supported methods: POST, DELETE"}), 405
+        return (
+            jsonify({"error": "Invalid HTTP method. Supported methods: POST, DELETE"}),
+            405,
+        )
 
 
 if __name__ == "__main__":
