@@ -25,7 +25,7 @@ class Deployer:
 
         self._compose_helper = ComposeHelper(
             os.path.join(self._project_path, config.compose_file_location),
-            config.rest_action != "DELETE"
+            config.rest_action != "DELETE",
         )
         self._secrets_helper = SecretsHelper(
             self._config.project_name, self._config.branch_name, self._project_path
@@ -95,6 +95,9 @@ class Deployer:
         return urls
 
     def _delete_deployment_files(self):
+        if not os.path.exists(self._project_path):
+            print(f"{self._project_path} already deleted!")
+            return
         try:
             shutil.rmtree(self._project_path)
         except Exception as e:

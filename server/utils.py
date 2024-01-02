@@ -69,6 +69,9 @@ services:
         logger.info("Docker Compose up -d --build executed successfully.")
 
     def remove_services(self):
+        if not os.path.exists(pathlib.Path(self._compose_file_location).parent):
+            logger.info(f"{self._compose_file_location} is already deleted!")
+            return
         command = ["docker-compose", "down", "-v"]
         project_dir = pathlib.Path(self._compose_file_location).parent
         subprocess.run(command, check=True, cwd=project_dir)
@@ -280,6 +283,9 @@ class NginxHelper:
         logger.info("Nginx reloaded successfully.")
 
     def remove_outer_proxy(self):
+        if not os.path.exists(self._outer_proxy_path):
+            logger.info(f"{self._outer_proxy_path} already deleted!")
+            return
         try:
             os.remove(self._outer_proxy_path)
         except Exception as e:
