@@ -24,7 +24,8 @@ class Deployer:
             self._setup_project()
 
         self._compose_helper = ComposeHelper(
-            os.path.join(self._project_path, config.compose_file_location)
+            os.path.join(self._project_path, config.compose_file_location),
+            config.rest_action != "DELETE"
         )
         self._secrets_helper = SecretsHelper(
             self._config.project_name, self._config.branch_name, self._project_path

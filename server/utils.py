@@ -51,9 +51,10 @@ services:
             - default
     """
 
-    def __init__(self, compose_file_location: str):
+    def __init__(self, compose_file_location: str, load_compose_file=True):
         self._compose_file_location = compose_file_location
-        self._compose = load_yaml_file(self._compose_file_location)
+        if load_compose_file:
+            self._compose = load_yaml_file(self._compose_file_location)
 
     def start_services(
         self, nginx_port: str, conf_file_path: str, deployment_namespace: str
