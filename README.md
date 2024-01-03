@@ -63,7 +63,12 @@ The following services are exposed:
 
 Tips 💡
 -------
-1. Use `docker-compose's` service discovery to connect within the same services in your projects. 
+1. Use `docker-compose's` service discovery to connect within the same services in your projects.
+
+High-Level Architecture
+-----------------------
+
+![sarthi](https://github.com/tushar5526/sarthi/assets/30565750/d08cf07e-f235-457c-952d-2406920319cb)
 
 
 ### License 📄
