@@ -1,6 +1,6 @@
 # Sarthi
 
-Self-host Ephemeral Preview Environments with ease using our one-time installation script and forget about server management. 
+Self-host Ephemeral (Preview) Environments with ease and forget about server management. 
 Sarthi uses other open-source projects to export logs, enable monitoring, manage secrets and create preview environments.
 
 It is meant to be used along with [sarthi-deploy](https://github.com/tushar5526/sarthi-deploy) GitHub Action for setting up preview environments in your project. Every time there is a new branch or a PR created, Sarthi GHA will create a preview environment for that. It also takes care of cleaning up preview environments when respective branches or PRs are merged.
