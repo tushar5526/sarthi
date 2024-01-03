@@ -115,5 +115,5 @@ echo -e "${DOCKER} ${YELLOW}You may need to restart your shell or log out and lo
 echo " 🚀 The following services are activated at the following URLs:"
 echo " 🔐 vault     : http://vault.${DOMAIN_NAME}"
 echo " 🐳 portainer : http://portainer.${DOMAIN_NAME} : 🔴 👉 Go to the URL to create a login before portainer times out and locks out!"
-echo " 🚗 sarthi    : http://api.${DOMAIN_NAME}"
+echo " 🚗 sarthi    : http://api.${DOMAIN_NAME} : 💡 Sarthi Server URL to be specified in GitHub Action"
 echo " 📊 grafana   : http://grafana.${DOMAIN_NAME} : 🔴 👉 Go to the URL to create the admin user!"
