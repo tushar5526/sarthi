@@ -111,3 +111,9 @@ docker-compose up -d sarthi portainer nginx
 # Display success message
 echo -e "${GREEN}${CHECK_MARK} Docker, Docker Compose, and Loki Docker Driver installed and configured successfully.${NC}"
 echo -e "${DOCKER} ${YELLOW}You may need to restart your shell or log out and log back in to apply the changes.${NC}"
+
+echo " 🚀 The following services are activated at the following URLs:"
+echo " 🔐 vault     : http://vault.${DOMAIN_NAME}"
+echo " 🐳 portainer : http://portainer.${DOMAIN_NAME} : 🔴 👉 Go to the URL to create a login before portainer times out and locks out!"
+echo " 🚗 sarthi    : http://api.${DOMAIN_NAME}"
+echo " 📊 grafana   : http://grafana.${DOMAIN_NAME} : 🔴 👉 Go to the URL to create the admin user!"

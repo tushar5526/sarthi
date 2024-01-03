@@ -38,6 +38,7 @@ services:
       DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
       VAULT_TOKEN: ${VAULT_TOKEN}
       VAULT_BASE_URL: ${VAULT_BASE_URL:-http://vault:8200}
+      SECRET_TEXT: ${SECRET_TEXT}
     depends_on:
       - vault
   
