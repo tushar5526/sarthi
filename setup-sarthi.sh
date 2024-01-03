@@ -106,7 +106,7 @@ bash setup-vault.sh
 
 
 echo -e "${YELLOW}${POINT} Start Sarthi 😎 ${NC}"
-docker-compose up -d nginx sarthi
+docker-compose up -d sarthi portainer nginx
 
 # Display success message
 echo -e "${GREEN}${CHECK_MARK} Docker, Docker Compose, and Loki Docker Driver installed and configured successfully.${NC}"

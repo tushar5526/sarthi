@@ -13,6 +13,11 @@ services:
     volumes:
       - ./nginx-confs:/etc/nginx/conf.d
       - ./sarthi.conf:/etc/nginx/conf.d/sarthi.conf
+    depends_on:
+      - portainer
+      - vault
+      - sarthi
+      - grafana
 
   sarthi:
     build: .
@@ -34,7 +39,6 @@ services:
       VAULT_TOKEN: ${VAULT_TOKEN}
       VAULT_BASE_URL: ${VAULT_BASE_URL:-http://vault:8200}
     depends_on:
-      - nginx
       - vault
   
   loki:
@@ -64,6 +68,8 @@ services:
       - grafana:/var/lib/grafana
       - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - loki
 
   vault:
     image: vault:1.12.3
@@ -87,6 +93,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
   portainer:
     image: portainer/portainer-ce:latest
     volumes:
