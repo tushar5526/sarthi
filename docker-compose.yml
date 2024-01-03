@@ -12,12 +12,11 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./nginx-confs:/etc/nginx/conf.d
+      - ./sarthi.conf:/etc/nginx/conf.d/sarthi.conf
 
   sarthi:
     build: .
     restart: always
-    ports:
-      - 5000:5000
     volumes:
       # hack to bypass file resource sharing error to make my development easy on mac
       # docker mount dir not meant to be used on linux
@@ -61,8 +60,6 @@ services:
     image: grafana/grafana
     restart: always
     container_name: grafana
-    ports:
-      - 3000:3000
     volumes:
       - grafana:/var/lib/grafana
       - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
@@ -81,8 +78,6 @@ services:
     cap_add:
       - IPC_LOCK
     command: vault server -config=/vault/config/vault.json
-    ports:
-      - 8200:8200
     healthcheck:
       test:
         [
@@ -92,7 +87,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+  portainer:
+    image: portainer/portainer-ce:latest
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
 
 volumes:
   grafana:
+  portainer_data:
   vault-secrets:
