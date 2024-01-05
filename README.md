@@ -21,8 +21,9 @@ General Flow
 2. Set up the project using the [setup-sarthi.sh](https://github.com/tushar5526/sarthi/blob/main/setup-sarthi.sh) script present in the root folder.
 3. Get the generated `SECRET_TEXT` and the deployed `SERVER_URL` after running the installation script.
 4. Set up the [Sarthi GitHub Action](https://github.com/tushar5526/sarthi-deploy) in your projects (No external bots - all your data within your servers).
-5. Environment secrets for preview deployments are fetched from the Vault and added in a `.env` file and placed along with your docker-compose file. 
-6. You are ready to roll 🚀
+5. Environment secrets for preview deployments are fetched from the Vault and added in a `.env` file and placed along with your docker-compose file.
+6. On any new events (PR open, close) Sarthi by default creates a unique URL for every service that was exposed in the `docker-compose` of the project.
+7. You are ready to roll 🚀
 
 
 Setup Instructions ⚙️
