@@ -23,14 +23,6 @@ class DeploymentConfig:
     compose_file_location: str = "docker-compose.yml"
     rest_action: str = "POST"
 
-    def __post_init__(self):
-        # Check if all members are specified
-        missing_members = [
-            field.name for field in fields(self) if not hasattr(self, field.name)
-        ]
-        if missing_members:
-            raise ValueError(f"Missing members: {', '.join(missing_members)}")
-
     def get_project_hash(self):
         return get_random_stub(f"{self.project_name}:{self.branch_name}")
 
@@ -53,6 +45,7 @@ services:
 
     def __init__(self, compose_file_location: str, load_compose_file=True):
         self._compose_file_location = compose_file_location
+        self._compose = None
         if load_compose_file:
             self._compose = load_yaml_file(self._compose_file_location)
 
@@ -110,6 +103,9 @@ services:
             "services"
         ]["nginx"]
 
+        self._write_compose_file()
+
+    def _write_compose_file(self):
         with open(self._compose_file_location, "w") as yaml_file:
             # Dump the data to the YAML file
             yaml.dump(self._compose, yaml_file, default_flow_style=False)
