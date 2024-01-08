@@ -26,7 +26,13 @@ General Flow
 4. Set up the [Sarthi GitHub Action](https://github.com/tushar5526/sarthi-deploy) in your projects (No external bots - all your data within your servers).
 5. Environment secrets for preview deployments are fetched from the Vault and added in a `.env` file and placed along with your docker-compose file.
 6. On any new events (PR open, close) Sarthi by default creates a unique URL for every service that was exposed in the `docker-compose` of the project.
-7. You are ready to roll 🚀
+7. You are ready to roll 🚀. GitHub Actions will comment on the deployment status according to different events!
+
+<img width="980" alt="Screenshot 2024-01-08 at 2 30 07 PM" src="https://github.com/tushar5526/sarthi/assets/30565750/94657a08-352b-4c2b-a8af-4af154f686e3">
+
+<p align='center'><i>Sarthi-Deploy GHA will not clutter your PR with comments - it will keep updating its earlier comment</i></p>
+<img width="937" alt="Screenshot 2024-01-08 at 2 31 14 PM" src="https://github.com/tushar5526/sarthi/assets/30565750/31697b06-fd67-40d5-84ce-c5d43dcdd2bf">
+
 
 
 Setup Instructions ⚙️
