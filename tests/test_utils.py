@@ -38,17 +38,27 @@ def test_start_services(compose_helper, mocker):
     # - No ports
     # - No container_name
     # - Restart should be present in each service
-    for service in compose_helper._compose["services"]:
-        if (
-            "ports" in compose_helper._compose["services"][service]
-            and service != f"nginx_{deployment_namespace}"
-        ):
-            assert False, "Ports mapping present in processed compose file"
-        if "container_name" in compose_helper._compose["services"][service]:
-            assert False, "Container Name present in processed compose file"
-        if "restart" not in compose_helper._compose["services"][service]:
-            assert False, "Restart clause missing in processed compose file"
-        assert compose_helper._compose["services"][service]["restart"] == "always"
+    services = compose_helper._compose["services"]
+
+    # Deployment Proxy should be added in compose file
+    is_deployment_proxy_service = False
+
+    for service_name, service_config in services.items():
+        is_deployment_proxy_service = is_deployment_proxy_service or service_name == f"nginx_{deployment_namespace}"
+
+        assert "ports" not in service_config or is_deployment_proxy_service, \
+            f"Ports mapping should not be present in {service_name}"
+
+        assert "container_name" not in service_config, \
+            f"Container Name should not be present in {service_name}"
+
+        assert "restart" in service_config, \
+            f"Restart clause missing in {service_name}"
+
+        assert service_config["restart"] == "always", \
+            f"Incorrect restart policy in {service_name}"
+
+    assert is_deployment_proxy_service, "Deployment (Nginx) Proxy is missing in processed services"
 
     mocked_run.assert_called_once_with(
         ["docker-compose", "up", "-d", "--build"], check=True, cwd=pathlib.Path(".")
