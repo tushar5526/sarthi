@@ -68,5 +68,4 @@ services:
     """
     mocker.patch("builtins.open", mocker.mock_open(read_data=test_compose_file))
     compose_helper = ComposeHelper("test-docker-compose.yml")
-    mocker.patch.object(compose_helper, "_write_compose_file")
     return compose_helper

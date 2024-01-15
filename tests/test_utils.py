@@ -44,21 +44,28 @@ def test_start_services(compose_helper, mocker):
     is_deployment_proxy_service = False
 
     for service_name, service_config in services.items():
-        is_deployment_proxy_service = is_deployment_proxy_service or service_name == f"nginx_{deployment_namespace}"
+        is_deployment_proxy_service = (
+            is_deployment_proxy_service
+            or service_name == f"nginx_{deployment_namespace}"
+        )
 
-        assert "ports" not in service_config or is_deployment_proxy_service, \
-            f"Ports mapping should not be present in {service_name}"
+        assert (
+            "ports" not in service_config or is_deployment_proxy_service
+        ), f"Ports mapping should not be present in {service_name}"
 
-        assert "container_name" not in service_config, \
-            f"Container Name should not be present in {service_name}"
+        assert (
+            "container_name" not in service_config
+        ), f"Container Name should not be present in {service_name}"
 
-        assert "restart" in service_config, \
-            f"Restart clause missing in {service_name}"
+        assert "restart" in service_config, f"Restart clause missing in {service_name}"
 
-        assert service_config["restart"] == "always", \
-            f"Incorrect restart policy in {service_name}"
+        assert (
+            service_config["restart"] == "always"
+        ), f"Incorrect restart policy in {service_name}"
 
-    assert is_deployment_proxy_service, "Deployment (Nginx) Proxy is missing in processed services"
+    assert (
+        is_deployment_proxy_service
+    ), "Deployment (Nginx) Proxy is missing in processed services"
 
     mocked_run.assert_called_once_with(
         ["docker-compose", "up", "-d", "--build"], check=True, cwd=pathlib.Path(".")
@@ -84,3 +91,17 @@ def test_get_service_ports_config(compose_helper):
         "mongo_db": [("27017", "27017")],
     }
     assert compose_helper.get_service_ports_config() == service_config
+
+
+def test_write_compose_file(compose_helper, mocker):
+    # Given
+    conf_file_path = "conf-file-path/some-nginx.conf"
+    deployment_namespace = "deployment-namespace"
+    mocker.patch("subprocess.run")
+    mock_yaml_dump = mocker.patch("server.utils.yaml.dump")
+
+    # When
+    compose_helper.start_services(5000, conf_file_path, deployment_namespace)
+
+    # Then
+    assert mock_yaml_dump.called_once()
