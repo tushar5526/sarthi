@@ -19,4 +19,4 @@ venv.bak/
 
 deployments/*
 nginx-confs/*
-*.txt
+*keys.txt
