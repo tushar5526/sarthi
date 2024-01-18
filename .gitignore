@@ -20,3 +20,6 @@ venv.bak/
 deployments/*
 nginx-confs/*
 *keys.txt
+
+# Ignore the nginx conf for sarthi
+sarthi.conf
