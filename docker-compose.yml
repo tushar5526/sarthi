@@ -1,7 +1,6 @@
-version: '3'
+version: "3"
 
 services:
-  
   nginx:
     image: nginx:latest
     restart: always
@@ -41,7 +40,7 @@ services:
       SECRET_TEXT: ${SECRET_TEXT}
     depends_on:
       - vault
-  
+
   loki:
     image: grafana/loki:latest
     restart: always
@@ -58,7 +57,7 @@ services:
     restart: always
     volumes:
       - /var/log:/var/log
-      - ./logging-config/promtail:/etc/promtail 
+      - ./logging-config/promtail:/etc/promtail
     command: -config.file=/etc/promtail/promtail-config.yaml
 
   grafana:
