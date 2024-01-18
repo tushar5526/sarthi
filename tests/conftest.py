@@ -5,7 +5,7 @@ from server.utils import ComposeHelper
 
 @pytest.fixture
 def compose_helper(mocker):
-    test_compose_file = """ 
+    test_compose_file = """
 # Test Docker compose to be used in tests
 
 version: '3'
