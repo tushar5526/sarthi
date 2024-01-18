@@ -1,6 +1,7 @@
 # Sarthi
 
 [![Open Source Love svg1](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/ellerbrock/open-source-badges/) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) ![contributions welcome](https://img.shields.io/static/v1.svg?label=Contributions&message=Welcome&color=0059b3&style=flat-square) ![GitHub contributors](https://img.shields.io/github/contributors-anon/tushar5526/sarthi)
+[![codecov](https://codecov.io/gh/tushar5526/sarthi/graph/badge.svg?token=85RAG9BYA4)](https://codecov.io/gh/tushar5526/sarthi)![tests](https://github.com/tushar5526/sarthi/actions/workflows/test.yml/badge.svg)![lints](https://github.com/tushar5526/sarthi/actions/workflows/lint.yml/badge.svg)
 
 Self-host Ephemeral (Preview) Environments with ease and forget about server management.
 Sarthi uses other open-source projects to export logs, enable monitoring, manage secrets and create preview environments.
