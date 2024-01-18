@@ -6,7 +6,7 @@ import pathlib
 import socket
 import subprocess
 import typing
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 import requests
 import yaml
@@ -35,7 +35,7 @@ services:
     nginx:
         image: nginx
         restart: always
-        ports: 
+        ports:
             - '%s:80'
         volumes:
             - %s:/etc/nginx/conf.d/default.conf
@@ -140,7 +140,6 @@ class NginxHelper:
         server_name %s;
         %s
     }
-    
     """
 
     ROUTES_BLOCK_TEMPLATE: typing.Final[
@@ -161,7 +160,7 @@ class NginxHelper:
     server {
         listen 80;
         server_name %s;
-    
+
         location / {
             proxy_pass http://%s:%s;
             proxy_set_header Host $host;
@@ -169,7 +168,7 @@ class NginxHelper:
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
         }
-    }   
+    }
     """
 
     def __init__(
@@ -210,7 +209,7 @@ class NginxHelper:
                     self._port = current_port
                     return current_port
 
-        raise RuntimeError(f"Could not find a free port in the specified range.")
+        raise RuntimeError("Could not find a free port in the specified range")
 
     def generate_outer_proxy_conf_file(self, port: str) -> str:
         port = port or self._port
@@ -259,7 +258,7 @@ class NginxHelper:
 
     def _test_nginx_config(self):
         try:
-            command = subprocess.run(
+            subprocess.run(
                 ["docker", "exec", "sarthi_nginx", "nginx", "-t"],
                 check=True,
                 capture_output=True,
