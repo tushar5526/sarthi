@@ -1,4 +1,4 @@
-name: Run pytest on PR
+name: Run tests and code-cov
 
 on:
   push:
@@ -37,3 +37,8 @@ jobs:
 
       - name: Run pytest
         run: python -m pytest -vvv
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
