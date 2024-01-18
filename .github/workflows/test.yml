@@ -39,7 +39,7 @@ jobs:
         run: python -m pytest -vvv
 
       - name: Generate Code Coverage Reports
-        run: coverage run simple_loop.py
+        run: coverage run pytest
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
