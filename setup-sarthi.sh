@@ -70,7 +70,7 @@ echo "ENV='$ENV'" >> .env
 echo "DOMAIN_NAME='$DOMAIN_NAME'" >> .env
 echo "SECRET_TEXT='$SECRET_TEXT'" >> .env
 
-sed -i "s/domain_name/$DOMAIN_NAME/g" "sarthi.conf.template" > "sarthi.conf"
+sed "s/domain_name/$DOMAIN_NAME/g" "sarthi.conf.template" > "sarthi.conf"
 
 # Start Grafaa + Loki services
 echo -e "${YELLOW}${POINT} Starting Loki + Grafana to export logs ${NC}"
