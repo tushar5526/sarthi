@@ -207,7 +207,7 @@ class NginxHelper:
                     current_port += 1
                 except ConnectionRefusedError:
                     self._port = current_port
-                    return current_port
+                    return str(current_port)
 
         raise RuntimeError("Could not find a free port in the specified range")
 

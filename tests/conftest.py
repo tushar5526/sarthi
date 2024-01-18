@@ -1,6 +1,6 @@
 import pytest
 
-from server.utils import ComposeHelper
+from server.utils import ComposeHelper, DeploymentConfig, NginxHelper
 
 
 @pytest.fixture
@@ -69,3 +69,19 @@ services:
     mocker.patch("builtins.open", mocker.mock_open(read_data=test_compose_file))
     compose_helper = ComposeHelper("test-docker-compose.yml")
     return compose_helper
+
+
+@pytest.fixture
+def deployment_config():
+    return DeploymentConfig(
+        project_name="test-project-name",
+        branch_name="test-branch-name",
+        project_git_url="https://github.com/tushar5526/test-project-name.git",
+    )
+
+
+@pytest.fixture
+def nginx_helper(deployment_config):
+    outer_conf_base_path = "/path/to/outer/conf"
+    deployment_project_path = "/path/to/deployment/project"
+    return NginxHelper(deployment_config, outer_conf_base_path, deployment_project_path)

@@ -1,17 +1,14 @@
 import pathlib
 
-from server.utils import ComposeHelper, DeploymentConfig
+import pytest
+
+from server.utils import ComposeHelper
 
 
-def test_verify_project_hash_format():
-    # Given
-    config = DeploymentConfig(
-        project_name="test-project-name",
-        branch_name="test-branch-name",
-        project_git_url="https://github.com/tushar5526/test-project-name.git",
-    )
+# Compose Helper Tests
+def test_verify_project_hash_format(deployment_config):
     # When
-    project_hash = config.get_project_hash()
+    project_hash = deployment_config.get_project_hash()
 
     # Then
     assert type(project_hash) == str
@@ -105,3 +102,137 @@ def test_write_compose_file(compose_helper, mocker):
 
     # Then
     assert mock_yaml_dump.called_once()
+
+
+# Nginx Helper Tests
+def test_find_free_port_pass(nginx_helper, mocker):
+    # Given
+    mock_socket = mocker.patch("server.utils.socket.socket")
+    mock_socket.return_value.__enter__.return_value.connect.side_effect = (
+        ConnectionRefusedError
+    )
+
+    # When
+    port = nginx_helper.find_free_port()
+
+    # Then
+    assert isinstance(port, str)
+
+
+def test_find_free_port_fails(nginx_helper, mocker):
+    # Given
+    mocker.patch("server.utils.socket.socket")
+
+    # Then
+    with pytest.raises(
+        RuntimeError, match="Could not find a free port in the specified range"
+    ):
+        # When
+        nginx_helper.find_free_port()
+
+
+def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
+    # Given
+    port = "12345"
+    mock_open = mocker.patch("builtins.open")
+    mocker.patch.object(nginx_helper, "_test_nginx_config", return_value=True)
+
+    # When
+    conf = nginx_helper.generate_outer_proxy_conf_file(port)
+
+    # Then
+    assert (
+        conf
+        == """
+    server {
+        listen 80;
+        server_name ~c7866191e5a92858.localhost;
+
+        location / {
+            proxy_pass http://host.docker.internal:12345;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+    """
+    )
+    mock_open.assert_called_with(
+        "/path/to/outer/conf/test-project-name-c7866191e5a92858.conf", "w"
+    )
+
+
+def test_generate_project_proxy_conf_file(nginx_helper, mocker):
+    # Given
+    services = {
+        "service1": [(1000, 2000)],
+        "service2": [(2000, 3000)],
+    }
+    mocker.patch("builtins.open")
+
+    # When
+    proxy_conf_path, urls = nginx_helper.generate_project_proxy_conf_file(services)
+
+    # Then
+    assert (
+        proxy_conf_path
+        == "/path/to/deployment/project/test-project-name-c7866191e5a92858.conf"
+    )
+    assert urls == [
+        "http://test-project-name-test-branch-name-1000-c7866191e5a92858.localhost",
+        "http://test-project-name-test-branch-name-2000-c7866191e5a92858.localhost",
+    ]
+
+
+def test_test_nginx_config(nginx_helper, mocker):
+    # Given
+    mocked_run = mocker.patch("subprocess.run")
+
+    # When
+    nginx_helper._test_nginx_config()
+
+    # Then
+    mocked_run.assert_called_with(
+        ["docker", "exec", "sarthi_nginx", "nginx", "-t"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_reload_nginx(nginx_helper, mocker):
+    # Given
+    mocked_run = mocker.patch("subprocess.run")
+
+    # When
+    nginx_helper.reload_nginx()
+
+    # Then
+    mocked_run.assert_called_with(
+        ["docker", "exec", "sarthi_nginx", "nginx", "-s", "reload"], check=True
+    )
+
+
+def test_remove_outer_proxy(nginx_helper, mocker):
+    # Given
+    mocker.patch("os.path.exists", return_value=True)
+    mock_remove = mocker.patch("os.remove")
+
+    # When
+    nginx_helper.remove_outer_proxy()
+
+    # Then
+    mock_remove.assert_called_with(
+        "/path/to/outer/conf/test-project-name-c7866191e5a92858.conf"
+    )
+
+
+def test_remove_outer_proxy_when_file_is_deleted_already(nginx_helper, mocker):
+    mocker.patch("os.path.exists", return_value=False)
+    mocker.patch("os.remove", side_effect=FileNotFoundError)
+
+    # When
+    nginx_helper.remove_outer_proxy()
+
+    # Then No error should be raised
