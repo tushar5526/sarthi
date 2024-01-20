@@ -23,27 +23,27 @@ class Deployer:
             f"{self._deployment_namespace}.lock",
         )
         self._lock = filelock.FileLock(self._lock_file_path)
-
         self._project_path: typing.Final[str] = os.path.join(
             self._DEPLOYMENTS_MOUNT_DIR, self._deployment_namespace
         )
 
-        if config.rest_action != "DELETE":
-            self._setup_project()
+        with self._lock:
+            if config.rest_action != "DELETE":
+                self._setup_project()
 
-        self._compose_helper = ComposeHelper(
-            os.path.join(self._project_path, config.compose_file_location),
-            config.rest_action != "DELETE",
-        )
-        self._secrets_helper = SecretsHelper(
-            self._config.project_name, self._config.branch_name, self._project_path
-        )
-        self._outer_proxy_conf_location = (
-            os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
-        )
-        self._nginx_helper = NginxHelper(
-            config, self._outer_proxy_conf_location, self._project_path
-        )
+            self._compose_helper = ComposeHelper(
+                os.path.join(self._project_path, config.compose_file_location),
+                config.rest_action != "DELETE",
+            )
+            self._secrets_helper = SecretsHelper(
+                self._config.project_name, self._config.branch_name, self._project_path
+            )
+            self._outer_proxy_conf_location = (
+                os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
+            )
+            self._nginx_helper = NginxHelper(
+                config, self._outer_proxy_conf_location, self._project_path
+            )
 
     def _clone_project(self):
         process = subprocess.Popen(
