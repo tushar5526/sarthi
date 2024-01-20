@@ -26,6 +26,12 @@ class DeploymentConfig:
     def get_project_hash(self):
         return get_random_stub(f"{self.project_name}:{self.branch_name}")
 
+    def __repr__(self):
+        return (
+            f"DeploymentConfig({self.project_name!r}, {self.branch_name!r}, {self.project_git_url!r}, "
+            f"{self.compose_file_location!r}, {self.rest_action!r})"
+        )
+
 
 class ComposeHelper:
     NGINX_SERVICE_TEMPLATE: typing.Final[
