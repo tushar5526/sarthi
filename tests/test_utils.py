@@ -236,3 +236,11 @@ def test_remove_outer_proxy_when_file_is_deleted_already(nginx_helper, mocker):
     nginx_helper.remove_outer_proxy()
 
     # Then No error should be raised
+
+
+def test_deployment_config_repr(deployment_config):
+    expected_repr = (
+        "DeploymentConfig('test-project-name', 'test-branch-name', "
+        "'https://github.com/tushar5526/test-project-name.git', 'docker-compose.yml', 'POST')"
+    )
+    assert repr(deployment_config) == expected_repr

@@ -77,6 +77,7 @@ def deployment_config():
         project_name="test-project-name",
         branch_name="test-branch-name",
         project_git_url="https://github.com/tushar5526/test-project-name.git",
+        rest_action="POST",
     )
 
 
