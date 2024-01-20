@@ -5,7 +5,8 @@ import subprocess
 import typing
 
 import filelock
-from utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
+
+from .utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
 
 logger = logging.getLogger(__name__)
 
