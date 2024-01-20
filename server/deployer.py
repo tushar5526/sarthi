@@ -4,7 +4,8 @@ import shutil
 import subprocess
 import typing
 
-from .utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
+import filelock
+from utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,12 @@ class Deployer:
             "DEPLOYMENTS_MOUNT_DIR"
         )
         self._deployment_namespace = f"{self._config.project_name}_{self._config.branch_name}_{config.get_project_hash()}"
+        self._lock_file_path = os.path.join(
+            os.environ.get("LOCK_FILE_BASE_PATH") or "/tmp",
+            f"{self._deployment_namespace}.lock",
+        )
+        self._lock = filelock.FileLock(self._lock_file_path)
+
         self._project_path: typing.Final[str] = os.path.join(
             self._DEPLOYMENTS_MOUNT_DIR, self._deployment_namespace
         )
@@ -50,18 +57,18 @@ class Deployer:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-
-        stdout, stderr = process.communicate()
-
+        try:
+            stdout, stderr = process.communicate()
+        except subprocess.TimeoutExpired as e:
+            logger.error(f"Error cloning the repo {self._config} with {e}")
+            raise
         if process.returncode == 0:
             logger.info("Git clone successful.")
         else:
             logger.error(f"Git clone failed. Return code: {process.returncode}")
-            logger.error("Standard Output:")
-            logger.error(stdout.decode())
-            logger.error("Standard Error:")
-            logger.error(stderr.decode())
-            raise Exception("Git clone failed")
+            logger.error(f"Standard Output: {stdout.decode()}")
+            logger.error(f"Standard Error: {stderr.decode()}")
+            raise Exception(f"Cloning the Git repo failed {self._config}")
 
     def _setup_project(self):
         if os.path.exists(self._project_path):
@@ -89,11 +96,6 @@ class Deployer:
         )
         return urls
 
-    def deploy_preview_environment(self):
-        urls = self._deploy_project()
-        self._configure_outer_proxy()
-        return urls
-
     def _delete_deployment_files(self):
         if not os.path.exists(self._project_path):
             print(f"{self._project_path} already deleted!")
@@ -103,8 +105,15 @@ class Deployer:
         except Exception as e:
             logger.debug(f"Error removing deployment files {e}")
 
+    def deploy_preview_environment(self):
+        with self._lock:
+            urls = self._deploy_project()
+            self._configure_outer_proxy()
+        return urls
+
     def delete_preview_environment(self):
-        self._compose_helper.remove_services()
-        self._nginx_helper.remove_outer_proxy()
-        self._nginx_helper.reload_nginx()
-        self._delete_deployment_files()
+        with self._lock:
+            self._compose_helper.remove_services()
+            self._nginx_helper.remove_outer_proxy()
+            self._nginx_helper.reload_nginx()
+            self._delete_deployment_files()
