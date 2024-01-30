@@ -333,7 +333,7 @@ class SecretsHelper:
         secret_data = response.json()
         with open(os.path.join(project_path, ".env"), "w") as file:
             for key, value in secret_data["data"]["data"].items():
-                file.write(f"{key}={value}\n")
+                file.write(f'{key}="{value}"\n')
 
 
 def get_random_stub(project_name: str) -> str:
