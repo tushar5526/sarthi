@@ -45,25 +45,27 @@ else
   sed 's/\x1B\[[0-9;]*[JKmsu]//g' < ansi-keys.txt  > keys.txt
 fi
 
-sed -n 's/Unseal Key [1-1]\+: \(.*\)/\1/p' keys.txt > parsed-key.txt
+awk '/Unseal Key [1-1]:/ {print $NF}' keys.txt > parsed-key.txt
 key=$(cat parsed-key.txt)
 docker-compose -f "$COMPOSE_FILE" exec -T "$SERVICE_NAME" vault operator unseal "$key" < /dev/null
 
-sed -n 's/Unseal Key [2-2]\+: \(.*\)/\1/p' keys.txt > parsed-key.txt
+
+
+awk '/Unseal Key [2-2]:/ {print $NF}' keys.txt > parsed-key.txt
 key=$(cat parsed-key.txt)
 docker-compose -f "$COMPOSE_FILE" exec -T "$SERVICE_NAME" vault operator unseal "$key" < /dev/null
 
-sed -n 's/Unseal Key [3-3]\+: \(.*\)/\1/p' keys.txt > parsed-key.txt
+awk '/Unseal Key [3-3]:/ {print $NF}' keys.txt > parsed-key.txt
 key=$(cat parsed-key.txt)
 docker-compose -f "$COMPOSE_FILE" exec -T "$SERVICE_NAME" vault operator unseal "$key" < /dev/null
 
-root_token=$(sed -n 's/Initial Root Token: \(.*\)/\1/p' keys.txt | tr -dc '[:print:]')
+root_token=$(awk '/Initial Root Token:/ {print $NF}' keys.txt | tr -dc '[:print:]')
 
 if [[ $vault_status == *"Initialized     true"* ]]; then
     echo "Vault is initialized already. Skipping creating a KV engine"
 else
   echo -e "\nVAULT_TOKEN=random_token" >> .env
-  sed -i "s/VAULT_TOKEN=.*/VAULT_TOKEN=$root_token/" ".env"
+  awk -v root_token="$root_token" '/^VAULT_TOKEN=/ {gsub(/=.*/, "=" root_token)} 1' ".env" > temp && mv temp ".env"
   docker-compose -f "$COMPOSE_FILE" exec -e VAULT_TOKEN=$root_token -T "$SERVICE_NAME" vault secrets enable -path=kv kv-v2
 fi
 

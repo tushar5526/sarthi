@@ -118,3 +118,4 @@ class Deployer:
             self._nginx_helper.remove_outer_proxy()
             self._nginx_helper.reload_nginx()
             self._delete_deployment_files()
+            self._secrets_helper.cleanup_deployment_variables()
