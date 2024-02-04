@@ -10,7 +10,7 @@ from server.deployer import Deployer, DeploymentConfig
 
 load_dotenv()
 
-if os.environ.get("ENV").lower() == "local":
+if (os.environ.get("ENV") or "local").lower() == "local":
     logging.basicConfig(level=logging.NOTSET)
 
 

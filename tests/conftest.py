@@ -1,6 +1,6 @@
 import pytest
 
-from server.utils import ComposeHelper, DeploymentConfig, NginxHelper
+from server.utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
 
 
 @pytest.fixture
@@ -86,3 +86,13 @@ def nginx_helper(deployment_config):
     outer_conf_base_path = "/path/to/outer/conf"
     deployment_project_path = "/path/to/deployment/project"
     return NginxHelper(deployment_config, outer_conf_base_path, deployment_project_path)
+
+
+@pytest.fixture
+def secrets_helper_instance(mocker):
+    mock_os = mocker.patch("server.utils.os")
+    mock_os.environ = {
+        "VAULT_TOKEN": "hvs.randomToken",
+        "VAULT_BASE_URL": "http://vault:8200",
+    }
+    return SecretsHelper("project_name", "branch_name", "/path/to/project")

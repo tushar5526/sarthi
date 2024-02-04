@@ -11,12 +11,6 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./nginx-confs:/etc/nginx/conf.d
-      - ./sarthi.conf:/etc/nginx/conf.d/sarthi.conf
-    depends_on:
-      - portainer
-      - vault
-      - sarthi
-      - grafana
 
   sarthi:
     build: .
@@ -40,42 +34,14 @@ services:
     depends_on:
       - vault
 
-  loki:
-    image: grafana/loki:latest
-    restart: always
-    ports:
-      - 127.0.0.1:3100:3100
-    volumes:
-      - ./logging-config/loki:/etc/loki
-    command: -config.file=/etc/loki/loki-config.yaml
-    depends_on:
-      - promtail
-
-  promtail:
-    image: grafana/promtail:latest
-    restart: always
-    volumes:
-      - /var/log:/var/log
-      - ./logging-config/promtail:/etc/promtail
-    command: -config.file=/etc/promtail/promtail-config.yaml
-
-  grafana:
-    image: grafana/grafana
-    restart: always
-    container_name: grafana
-    volumes:
-      - grafana:/var/lib/grafana
-      - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
-    depends_on:
-      - loki
-
   vault:
     image: vault:1.12.3
     restart: always
+    ports:
+      - "8200:8200"
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
-      - vault-secrets:/vault/file
+      - vault-secrets-dev:/vault/file
     environment:
       VAULT_ADDR: http://0.0.0.0:8200
       VAULT_API_ADDR: http://0.0.0.0:8200
@@ -93,14 +59,5 @@ services:
       timeout: 5s
       retries: 3
 
-  portainer:
-    image: portainer/portainer-ce:latest
-    volumes:
-      - portainer_data:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
-
 volumes:
-  grafana:
-  portainer_data:
-  vault-secrets:
+  vault-secrets-dev:

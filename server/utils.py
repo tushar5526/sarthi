@@ -295,12 +295,15 @@ class NginxHelper:
 
 class SecretsHelper:
     def __init__(self, project_name, branch_name, project_path):
+        vault_url = os.environ.get("VAULT_BASE_URL")
+        vault_token = os.environ.get("VAULT_TOKEN")
         self._project_path = project_path
         self._secrets_namespace = f"{project_name}/{branch_name}"
-        self._secret_url = (
-            f"{os.environ.get('VAULT_BASE_URL')}/v1/kv/data/{self._secrets_namespace}"
+        self._secret_url = f"{vault_url}/v1/kv/data/{self._secrets_namespace}"
+        self._secret_metadata_url = (
+            f"{vault_url}/v1/kv/metadata/{self._secrets_namespace}"
         )
-        self._headers = {"X-Vault-Token": os.environ.get("VAULT_TOKEN")}
+        self._headers = {"X-Vault-Token": vault_token}
 
     def _create_env_placeholder(self):
         sample_envs = {"key": "secret-value"}
@@ -334,6 +337,17 @@ class SecretsHelper:
         with open(os.path.join(project_path, ".env"), "w") as file:
             for key, value in secret_data["data"]["data"].items():
                 file.write(f'{key}="{value}"\n')
+
+    def cleanup_deployment_variables(self):
+        response = requests.delete(url=self._secret_metadata_url, headers=self._headers)
+        logger.debug(
+            f"Tried Removing Deployment variables from Vault {response.status_code}"
+        )
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            logger.debug(f"Error removing deployment secrets {e}")
+        return response
 
 
 def get_random_stub(project_name: str) -> str:

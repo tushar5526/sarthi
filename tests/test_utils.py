@@ -1,6 +1,8 @@
 import pathlib
+from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from server.utils import ComposeHelper
 
@@ -244,3 +246,142 @@ def test_deployment_config_repr(deployment_config):
         "'https://github.com/tushar5526/test-project-name.git', 'docker-compose.yml', 'POST')"
     )
     assert repr(deployment_config) == expected_repr
+
+
+@patch("server.utils.os")
+@patch("server.utils.requests")
+def test_create_env_placeholder_with_sample_env_file(
+    mock_requests, mock_os, secrets_helper_instance
+):
+    # Mocking necessary dependencies
+    mock_os.path.exists.return_value = True
+    mock_dotenv_values = MagicMock(return_value={"key": "secret-value"})
+    with patch("server.utils.dotenv_values", mock_dotenv_values):
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        mock_requests.post.return_value = mock_response
+
+        # Calling the method under test
+        secrets_helper_instance._create_env_placeholder()
+
+        # Assertions
+        mock_dotenv_values.assert_called()
+        mock_requests.post.assert_called_once_with(
+            url="http://vault:8200/v1/kv/data/project_name/branch_name",
+            headers={"X-Vault-Token": "hvs.randomToken"},
+            data='{"data": {"key": "secret-value"}}',
+        )
+
+
+@patch("server.utils.os")
+@patch("server.utils.requests")
+def test_create_env_placeholder_with_sample_env_file_missing(
+    mock_requests, mock_os, secrets_helper_instance
+):
+    # Mocking necessary dependencies
+    mock_os.path.join.return_value = "/path/to/project/.env.sample"
+    mock_os.path.exists.return_value = False
+
+    # Calling the method under test
+    secrets_helper_instance._create_env_placeholder()
+
+    # Assertions
+    mock_os.path.exists.assert_called_with("/path/to/project/.env.sample")
+    mock_requests.post.assert_called_once_with(
+        url="http://vault:8200/v1/kv/data/project_name/branch_name",
+        headers={"X-Vault-Token": "hvs.randomToken"},
+        data='{"data": {"key": "secret-value"}}',
+    )
+
+
+@patch("server.utils.os")
+@patch("server.utils.requests")
+def test_inject_env_variables_with_secrets_found(
+    mock_requests, mock_os, secrets_helper_instance
+):
+    # Mocking necessary dependencies
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"data": {"data": {"key": "secret-value"}}}
+    mock_requests.get.return_value = mock_response
+    mock_open = MagicMock()
+    mock_os.path.join.return_value = "/path/to/project/.env"
+    with patch("builtins.open", mock_open):
+        # Calling the method under test
+        secrets_helper_instance.inject_env_variables("/path/to/project")
+
+        # Assertions
+        mock_requests.get.assert_called_once_with(
+            url="http://vault:8200/v1/kv/data/project_name/branch_name",
+            headers={"X-Vault-Token": "hvs.randomToken"},
+        )
+        mock_open.assert_called_once_with("/path/to/project/.env", "w")
+        # TODO: Add check for what is written
+        # mock_open().write.assert_called_once_with('key="secret-value"\n')
+
+
+@patch("server.utils.os")
+@patch("server.utils.requests")
+def test_inject_env_variables_with_no_secrets(
+    mock_requests, mock_os, secrets_helper_instance
+):
+    # Mocking necessary dependencies
+    mock_response = MagicMock()
+    mock_response.status_code = 404
+    mock_requests.get.return_value = mock_response
+    mock_create_env_placeholder = MagicMock()
+    with patch.object(
+        secrets_helper_instance, "_create_env_placeholder", mock_create_env_placeholder
+    ):
+        # Calling the method under test
+        secrets_helper_instance.inject_env_variables("/path/to/project")
+
+        # Assertions
+        mock_requests.get.assert_called_once_with(
+            url="http://vault:8200/v1/kv/data/project_name/branch_name",
+            headers={"X-Vault-Token": "hvs.randomToken"},
+        )
+        mock_create_env_placeholder.assert_called_once_with()
+
+
+@patch("server.utils.requests.delete", autospec=True)
+def test_cleanup_deployment_variables_success(
+    mock_requests_delete, secrets_helper_instance
+):
+    # Mocking necessary dependencies
+    mock_response = MagicMock()
+    mock_response.status_code = 204
+    mock_requests_delete.return_value = mock_response
+
+    # Calling the method under test
+    result = secrets_helper_instance.cleanup_deployment_variables()
+
+    # Assertions
+    mock_requests_delete.assert_called_once_with(
+        url="http://vault:8200/v1/kv/metadata/project_name/branch_name",
+        headers={"X-Vault-Token": "hvs.randomToken"},
+    )
+    assert result.status_code == 204
+
+
+@patch("server.utils.requests.delete", autospec=True)
+def test_cleanup_deployment_variables_failure(
+    mock_requests_delete, secrets_helper_instance
+):
+    # Mocking necessary dependencies
+    mock_response = MagicMock()
+    mock_response.status_code = 500
+    mock_response.raise_for_status.side_effect = requests.HTTPError(
+        "Internal Server Error"
+    )
+    mock_requests_delete.return_value = mock_response
+
+    # Calling the method under test
+    result = secrets_helper_instance.cleanup_deployment_variables()
+
+    # Assertions
+    mock_requests_delete.assert_called_once_with(
+        url="http://vault:8200/v1/kv/metadata/project_name/branch_name",
+        headers={"X-Vault-Token": "hvs.randomToken"},
+    )
+    assert result.status_code == 500
