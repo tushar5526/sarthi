@@ -1,5 +1,6 @@
 import logging
 import os
+from urllib.parse import urlparse
 
 import jwt
 from dotenv import load_dotenv
@@ -32,13 +33,13 @@ def verify_token(token):
 
 # Your deployment endpoint
 @app.route("/deploy", methods=["POST", "DELETE"])
-@auth.login_required
 def deploy():
     data = request.get_json()
 
     # Create DeploymentConfig object
-    project_url_split = data.get("project_git_url").split("/")
-    project_name = f"{project_url_split[-2]}_{project_url_split[-1]}".split(".git")[0]
+    project_name = urlparse(data.get("project_git_url")).path[
+        :-4
+    ]  # remove .git from the end
     config = DeploymentConfig(
         project_name=project_name,
         branch_name=data.get("branch"),

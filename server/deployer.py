@@ -51,7 +51,7 @@ class Deployer:
                 "git",
                 "clone",
                 "-b",
-                self._config.branch_name,
+                self._config.branch_name_raw,
                 self._config.project_git_url,
                 self._project_path,
             ],
