@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 import socket
 import subprocess
 import typing
@@ -23,12 +24,27 @@ class DeploymentConfig:
     compose_file_location: str = "docker-compose.yml"
     rest_action: str = "POST"
 
+    def __post_init__(self):
+        self.branch_name_raw = self.branch_name
+        self.project_name_raw = self.project_name
+
+        self.project_name = re.sub(r"[^a-zA-Z]", "", self.project_name.lower())
+        self.project_name = (
+            self.project_name[-10:]
+            if len(self.project_name) > 10
+            else self.project_name
+        )
+        self.branch_name = re.sub(r"[^a-zA-Z]", "", self.branch_name.lower())
+        self.branch_name = (
+            self.branch_name[:20] if len(self.branch_name) > 20 else self.branch_name
+        )
+
     def get_project_hash(self):
-        return get_random_stub(f"{self.project_name}:{self.branch_name}")
+        return get_random_stub(f"{self.project_name}:{self.branch_name}", 10)
 
     def __repr__(self):
         return (
-            f"DeploymentConfig({self.project_name!r}, {self.branch_name!r}, {self.project_git_url!r}, "
+            f"DeploymentConfig({self.project_name_raw!r}, {self.branch_name_raw!r}, {self.project_git_url!r}, "
             f"{self.compose_file_location!r}, {self.rest_action!r})"
         )
 
@@ -350,8 +366,9 @@ class SecretsHelper:
         return response
 
 
-def get_random_stub(project_name: str) -> str:
-    return hashlib.md5(project_name.encode()).hexdigest()[:16]
+def get_random_stub(project_name: str, length: int = 64) -> str:
+    hash_string = hashlib.md5(project_name.encode()).hexdigest()
+    return hash_string[:length] if length else hash_string
 
 
 def load_yaml_file(filename: str):

@@ -14,7 +14,7 @@ def test_verify_project_hash_format(deployment_config):
 
     # Then
     assert type(project_hash) == str
-    assert len(project_hash) == 16
+    assert len(project_hash) == 10
 
 
 def test_dont_load_compose_file_in_compose_helper():
@@ -148,7 +148,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
         == """
     server {
         listen 80;
-        server_name ~c7866191e5a92858.localhost;
+        server_name ~7a38dba0c2.localhost;
 
         location / {
             proxy_pass http://host.docker.internal:12345;
@@ -160,9 +160,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
     }
     """
     )
-    mock_open.assert_called_with(
-        "/path/to/outer/conf/test-project-name-c7866191e5a92858.conf", "w"
-    )
+    mock_open.assert_called_with("/path/to/outer/conf/rojectname-7a38dba0c2.conf", "w")
 
 
 def test_generate_project_proxy_conf_file(nginx_helper, mocker):
@@ -177,13 +175,10 @@ def test_generate_project_proxy_conf_file(nginx_helper, mocker):
     proxy_conf_path, urls = nginx_helper.generate_project_proxy_conf_file(services)
 
     # Then
-    assert (
-        proxy_conf_path
-        == "/path/to/deployment/project/test-project-name-c7866191e5a92858.conf"
-    )
+    assert proxy_conf_path == "/path/to/deployment/project/rojectname-7a38dba0c2.conf"
     assert urls == [
-        "http://test-project-name-test-branch-name-1000-c7866191e5a92858.localhost",
-        "http://test-project-name-test-branch-name-2000-c7866191e5a92858.localhost",
+        "http://rojectname-testbranchname-1000-7a38dba0c2.localhost",
+        "http://rojectname-testbranchname-2000-7a38dba0c2.localhost",
     ]
 
 
@@ -225,9 +220,7 @@ def test_remove_outer_proxy(nginx_helper, mocker):
     nginx_helper.remove_outer_proxy()
 
     # Then
-    mock_remove.assert_called_with(
-        "/path/to/outer/conf/test-project-name-c7866191e5a92858.conf"
-    )
+    mock_remove.assert_called_with("/path/to/outer/conf/rojectname-7a38dba0c2.conf")
 
 
 def test_remove_outer_proxy_when_file_is_deleted_already(nginx_helper, mocker):
