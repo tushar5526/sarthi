@@ -7,12 +7,17 @@ local-dev:
 	echo "\nDEPLOYMENT_HOST='localhost' # DO NOT EDIT THIS" >> .env
 	bash setup-vault.sh docker-compose-local.yml
 	echo "\nVAULT_BASE_URL='http://localhost:8200'" >> .env
-	mkdir deployments nginx-confs
+	mkdir -p deployments nginx-confs
 	docker-compose -f docker-compose-local.yml up -d nginx
 
 .PHONY: sarthi
 sarthi:
 	python app.py
+
+.PHONY: test-lint
+test-lint:
+	pre-commit run --all-files
+	python -m pytest -vvv tests
 
 .PHONY: test
 test:
@@ -23,3 +28,7 @@ reset:
 	rm -f .env keys.txt parsed-key.txt ansi-keys.txt
 	docker compose -f docker-compose-local.yml down -v
 	rm -rf deployments nginx-confs
+
+.PHONY: code-cov
+code-cov:
+	coverage run -m pytest tests

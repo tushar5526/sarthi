@@ -1,10 +1,12 @@
 import pathlib
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 import requests
+from fastapi import HTTPException
 
-from server.utils import ComposeHelper
+from server import constants
+from server.utils import ComposeHelper, DeploymentConfig
 
 
 # Compose Helper Tests
@@ -22,7 +24,7 @@ def test_dont_load_compose_file_in_compose_helper():
     assert getattr(compose_helper, "_compose") is None
 
 
-def test_start_services(compose_helper, mocker):
+def test_start_services_success(compose_helper, mocker):
     # Given
     mocked_run = mocker.patch("subprocess.run")
 
@@ -71,12 +73,62 @@ def test_start_services(compose_helper, mocker):
     )
 
 
-def test_remove_services(compose_helper, mocker):
+def test_start_services_failure_on_processing_compose_file(compose_helper, mocker):
+    # Given
+    exception_msg = "Random Exception Occurred"
+    mock_generate_processed_compose_file = mocker.patch.object(
+        compose_helper, "_generate_processed_compose_file"
+    )
+    mock_generate_processed_compose_file.side_effect = Exception(exception_msg)
+    conf_file_path = "conf-file-path/some-nginx.conf"
+    deployment_namespace = "deployment-namespace"
+
+    # When / Then
+    with pytest.raises(HTTPException, match=exception_msg):
+        compose_helper.start_services(5000, conf_file_path, deployment_namespace)
+
+
+def test_start_services_failure_on_docker_compose_up(compose_helper, mocker):
+    # Given
     mocked_run = mocker.patch("subprocess.run")
+    mocked_run.side_effect = Exception("Random error")
+
+    conf_file_path = "conf-file-path/some-nginx.conf"
+    deployment_namespace = "deployment-namespace"
+
+    # When
+    with pytest.raises(HTTPException):
+        compose_helper.start_services(5000, conf_file_path, deployment_namespace)
+
+
+def test_remove_services_success(compose_helper, mocker):
+    # Given
+    mocked_run = mocker.patch("subprocess.run")
+
+    # When
     compose_helper.remove_services()
+
+    # Then
     mocked_run.assert_called_once_with(
         ["docker-compose", "down", "-v"], check=True, cwd=pathlib.Path(".")
     )
+
+
+def test_remove_services_docker_compose_failure(compose_helper, mocker):
+    # Given
+    mocked_run = mocker.patch("subprocess.run")
+    mocked_run.side_effect = Exception("Random Exception")
+
+    # Then
+    with pytest.raises(HTTPException):
+        # When
+        compose_helper.remove_services()
+
+
+def test_remove_deleted_deployment(compose_helper):
+    compose_helper._compose_file_location = "/random/random-file-location"
+    msg = compose_helper.remove_services()
+    assert msg
 
 
 def test_get_service_ports_config(compose_helper):
@@ -127,7 +179,8 @@ def test_find_free_port_fails(nginx_helper, mocker):
 
     # Then
     with pytest.raises(
-        RuntimeError, match="Could not find a free port in the specified range"
+        HTTPException,
+        match="Could not find a free port in the specified range",
     ):
         # When
         nginx_helper.find_free_port()
@@ -148,7 +201,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
         == """
     server {
         listen 80;
-        server_name ~7a38dba0c2.localhost;
+        server_name ~5022fe75f1.localhost;
 
         location / {
             proxy_pass http://host.docker.internal:12345;
@@ -160,7 +213,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
     }
     """
     )
-    mock_open.assert_called_with("/path/to/outer/conf/rojectname-7a38dba0c2.conf", "w")
+    mock_open.assert_called_with("/path/to/outer/conf/testprojec-5022fe75f1.conf", "w")
 
 
 def test_generate_project_proxy_conf_file(nginx_helper, mocker):
@@ -175,10 +228,10 @@ def test_generate_project_proxy_conf_file(nginx_helper, mocker):
     proxy_conf_path, urls = nginx_helper.generate_project_proxy_conf_file(services)
 
     # Then
-    assert proxy_conf_path == "/path/to/deployment/project/rojectname-7a38dba0c2.conf"
+    assert proxy_conf_path == "/path/to/deployment/project/testprojec-5022fe75f1.conf"
     assert urls == [
-        "http://rojectname-testbranchname-1000-7a38dba0c2.localhost",
-        "http://rojectname-testbranchname-2000-7a38dba0c2.localhost",
+        "http://testprojec-testbranchname-1000-5022fe75f1.localhost",
+        "http://testprojec-testbranchname-2000-5022fe75f1.localhost",
     ]
 
 
@@ -198,7 +251,7 @@ def test_test_nginx_config(nginx_helper, mocker):
     )
 
 
-def test_reload_nginx(nginx_helper, mocker):
+def test_reload_nginx_success(nginx_helper, mocker):
     # Given
     mocked_run = mocker.patch("subprocess.run")
 
@@ -211,6 +264,24 @@ def test_reload_nginx(nginx_helper, mocker):
     )
 
 
+def test_reload_nginx_failure(nginx_helper, mocker):
+    # Given
+    mocked_run = mocker.patch("subprocess.run")
+    mocked_run.side_effect = Exception("Random Error")
+
+    # Then
+    with pytest.raises(HTTPException):
+        # When
+        nginx_helper.reload_nginx()
+
+    mocked__test_nginx_config = mocker.patch.object(nginx_helper, "_test_nginx_config")
+    mocked__test_nginx_config.return_value = True
+
+    with pytest.raises(HTTPException):
+        # When
+        nginx_helper.reload_nginx()
+
+
 def test_remove_outer_proxy(nginx_helper, mocker):
     # Given
     mocker.patch("os.path.exists", return_value=True)
@@ -220,7 +291,7 @@ def test_remove_outer_proxy(nginx_helper, mocker):
     nginx_helper.remove_outer_proxy()
 
     # Then
-    mock_remove.assert_called_with("/path/to/outer/conf/rojectname-7a38dba0c2.conf")
+    mock_remove.assert_called_with("/path/to/outer/conf/testprojec-5022fe75f1.conf")
 
 
 def test_remove_outer_proxy_when_file_is_deleted_already(nginx_helper, mocker):
@@ -241,6 +312,16 @@ def test_deployment_config_repr(deployment_config):
     assert repr(deployment_config) == expected_repr
 
 
+def test_create_deployment_config_with_reserved_branch_name():
+    deployment_config = DeploymentConfig(
+        project_name="test-project-name",
+        branch_name=constants.DEFAULT_SECRETS_PATH,
+        project_git_url="https://github.com/tushar5526/test-project-name.git",
+        rest_action="POST",
+    )
+    assert deployment_config.branch_name == "defaultdevsecrets"
+
+
 @patch("server.utils.os")
 @patch("server.utils.requests")
 def test_create_env_placeholder_with_sample_env_file(
@@ -258,12 +339,19 @@ def test_create_env_placeholder_with_sample_env_file(
         secrets_helper_instance._create_env_placeholder()
 
         # Assertions
+        assert mock_requests.post.call_args_list == [
+            call(
+                url="http://vault:8200/v1/kv/data/project_name/default-dev-secrets",
+                headers={"X-Vault-Token": "hvs.randomToken"},
+                data='{"data": {"key": "secret-value"}}',
+            ),
+            call(
+                url="http://vault:8200/v1/kv/data/project_name/branch_name",
+                headers={"X-Vault-Token": "hvs.randomToken"},
+                data='{"data": {"key": "secret-value"}}',
+            ),
+        ]
         mock_dotenv_values.assert_called()
-        mock_requests.post.assert_called_once_with(
-            url="http://vault:8200/v1/kv/data/project_name/branch_name",
-            headers={"X-Vault-Token": "hvs.randomToken"},
-            data='{"data": {"key": "secret-value"}}',
-        )
 
 
 @patch("server.utils.os")
@@ -280,7 +368,7 @@ def test_create_env_placeholder_with_sample_env_file_missing(
 
     # Assertions
     mock_os.path.exists.assert_called_with("/path/to/project/.env.sample")
-    mock_requests.post.assert_called_once_with(
+    mock_requests.post.assert_called_with(
         url="http://vault:8200/v1/kv/data/project_name/branch_name",
         headers={"X-Vault-Token": "hvs.randomToken"},
         data='{"data": {"key": "secret-value"}}',
@@ -370,11 +458,10 @@ def test_cleanup_deployment_variables_failure(
     mock_requests_delete.return_value = mock_response
 
     # Calling the method under test
-    result = secrets_helper_instance.cleanup_deployment_variables()
+    secrets_helper_instance.cleanup_deployment_variables()
 
     # Assertions
     mock_requests_delete.assert_called_once_with(
         url="http://vault:8200/v1/kv/metadata/project_name/branch_name",
         headers={"X-Vault-Token": "hvs.randomToken"},
     )
-    assert result.status_code == 500

@@ -5,6 +5,9 @@ import subprocess
 import typing
 
 import filelock
+from fastapi.exceptions import HTTPException
+
+import server.constants as constants
 
 from .utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
 
@@ -28,12 +31,12 @@ class Deployer:
         )
 
         with self._lock:
-            if config.rest_action != "DELETE":
+            if config.rest_action != constants.DELETE:
                 self._setup_project()
 
             self._compose_helper = ComposeHelper(
                 os.path.join(self._project_path, config.compose_file_location),
-                config.rest_action != "DELETE",
+                config.rest_action != constants.DELETE,
             )
             self._secrets_helper = SecretsHelper(
                 self._config.project_name, self._config.branch_name, self._project_path
@@ -62,14 +65,17 @@ class Deployer:
             stdout, stderr = process.communicate()
         except subprocess.TimeoutExpired as e:
             logger.error(f"Error cloning the repo {self._config} with {e}")
-            raise
+            raise HTTPException(500, e)
         if process.returncode == 0:
             logger.info("Git clone successful.")
         else:
             logger.error(f"Git clone failed. Return code: {process.returncode}")
             logger.error(f"Standard Output: {stdout.decode()}")
             logger.error(f"Standard Error: {stderr.decode()}")
-            raise Exception(f"Cloning the Git repo failed {self._config}")
+            raise HTTPException(
+                500,
+                f"Cloning the Git repo failed {self._config.project_git_url}:{self._config.branch_name} {stderr.decode()}",
+            )
 
     def _setup_project(self):
         if os.path.exists(self._project_path):
