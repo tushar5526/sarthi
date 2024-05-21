@@ -2,7 +2,7 @@ version: "3"
 
 services:
   nginx:
-    image: nginx:latest
+    image: nginx:1.26.0
     restart: always
     container_name: sarthi_nginx
     ports:
@@ -41,7 +41,7 @@ services:
       - vault
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:main-8978ecf
     restart: always
     ports:
       - 127.0.0.1:3100:3100
@@ -52,7 +52,7 @@ services:
       - promtail
 
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:main-8978ecf
     restart: always
     volumes:
       - /var/log:/var/log
@@ -60,7 +60,7 @@ services:
     command: -config.file=/etc/promtail/promtail-config.yaml
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:10.1.10-ubuntu
     restart: always
     container_name: grafana
     volumes:
@@ -71,7 +71,7 @@ services:
       - loki
 
   vault:
-    image: vault:1.12.3
+    image: hashicorp/vault:1.16
     restart: always
     volumes:
       - ./vault/vault.json:/vault/config/vault.json
@@ -94,7 +94,7 @@ services:
       retries: 3
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:2.20.2
     volumes:
       - portainer_data:/data
       - /var/run/docker.sock:/var/run/docker.sock

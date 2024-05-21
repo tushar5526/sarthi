@@ -7,7 +7,7 @@ local-dev:
 	echo "\nDEPLOYMENT_HOST='localhost' # DO NOT EDIT THIS" >> .env
 	bash setup-vault.sh docker-compose-local.yml
 	echo "\nVAULT_BASE_URL='http://localhost:8200'" >> .env
-	mkdir deployments nginx-confs
+	mkdir -p deployments nginx-confs
 	docker-compose -f docker-compose-local.yml up -d nginx
 
 .PHONY: sarthi

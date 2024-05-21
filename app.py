@@ -4,67 +4,85 @@ from urllib.parse import urlparse
 
 import jwt
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
-from flask_httpauth import HTTPTokenAuth
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+import server.constants as constants
 from server.deployer import Deployer, DeploymentConfig
 
 load_dotenv()
 
-if (os.environ.get("ENV") or "local").lower() == "local":
-    logging.basicConfig(level=logging.NOTSET)
+app = FastAPI()
+security = HTTPBearer()
+app.config = {"SECRET_TEXT": os.environ.get("SECRET_TEXT")}
+
+env = os.environ.get("ENV").upper() == constants.LOCAL
+logging.basicConfig(level=logging.DEBUG if env else logging.INFO)
 
 
-app = Flask(__name__)
-auth = HTTPTokenAuth("Bearer")
-app.config["SECRET_TEXT"] = os.environ.get("SECRET_TEXT")
-
-
-@auth.verify_token
-def verify_token(token):
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
     try:
         data = jwt.decode(token, app.config["SECRET_TEXT"], algorithms=["HS256"])
         logging.debug(f"Authenticated successfully {data}")
-    except Exception as e:  # noqa: E722
-        logging.debug(f"Error while authenticating {e}")
-        return False
-    return True
+    except Exception as e:
+        logging.info(f"Error while authenticating {e}")
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return data
 
 
-# Your deployment endpoint
-@app.route("/deploy", methods=["POST", "DELETE"])
-@auth.login_required
-def deploy():
-    data = request.get_json()
+@app.post("/deploy")
+@app.delete("/deploy")
+async def deploy(request: Request, token: dict = Depends(verify_token)):
+    data = await request.json()
 
-    # Create DeploymentConfig object
-    project_name = urlparse(data.get("project_git_url")).path[
-        :-4
-    ]  # remove .git from the end
+    try:
+        project_git_url = urlparse(data.get("project_git_url")).path
+    except Exception as e:
+        logging.error(e)
+        return JSONResponse(
+            status_code=400,
+            content={"message": f"Bad Project Git URL: {str(e)}"},
+        )
+
+    if not project_git_url or not project_git_url.endswith(".git"):
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Project URL should not be empty and end with .git"},
+        )
+
+    project_name = project_git_url[:-4]  # remove .git from the end
     config = DeploymentConfig(
         project_name=project_name,
         branch_name=data.get("branch"),
         project_git_url=data.get("project_git_url"),
-        compose_file_location=data.get("compose_file_location") or "docker-compose.yml",
+        compose_file_location=data.get("compose_file_location"),
         rest_action=request.method,
     )
-
     deployer = Deployer(config)
-    if request.method == "POST":
+
+    if request.method == constants.POST:
         urls = deployer.deploy_preview_environment()
-        return jsonify(urls)
-    elif request.method == "DELETE":
+        return JSONResponse(content=urls)
+    elif request.method == constants.DELETE:
         deployer.delete_preview_environment()
-        return (
-            jsonify({"message": "Removed preview environment"}),
-            200,
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Removed preview environment"},
         )
     else:
-        return (
-            jsonify({"error": "Invalid HTTP method. Supported methods: POST, DELETE"}),
-            405,
+        return JSONResponse(
+            status_code=405,
+            content={"error": "Invalid HTTP method. Supported methods: POST, DELETE"},
         )
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=5000,
+    )
