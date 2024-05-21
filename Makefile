@@ -14,6 +14,11 @@ local-dev:
 sarthi:
 	python app.py
 
+.PHONY: test-lint
+test-lint:
+	pre-commit run --all-files
+	python -m pytest -vvv tests
+
 .PHONY: test
 test:
 	python -m pytest -vvv tests
@@ -23,3 +28,7 @@ reset:
 	rm -f .env keys.txt parsed-key.txt ansi-keys.txt
 	docker compose -f docker-compose-local.yml down -v
 	rm -rf deployments nginx-confs
+
+.PHONY: code-cov
+code-cov:
+	coverage run -m pytest tests

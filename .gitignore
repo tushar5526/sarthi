@@ -23,3 +23,5 @@ nginx-confs/*
 
 # Ignore the nginx conf for sarthi
 sarthi.conf
+
+.coverage

@@ -50,8 +50,8 @@ class DeploymentConfig:
 
     def __repr__(self):
         return (
-            f"DeploymentConfig({self.project_name_raw=!r}, {self.branch_name_raw=!r}, {self.project_git_url=!r}, "
-            f"{self.compose_file_location=!r}, {self.rest_action=!r})"
+            f"DeploymentConfig({self.project_name_raw!r}, {self.branch_name_raw!r}, {self.project_git_url!r}, "
+            f"{self.compose_file_location!r}, {self.rest_action!r})"
         )
 
 
@@ -429,6 +429,7 @@ class SecretsHelper:
                 f"Tried Removing Deployment variables from Vault {response.status_code}"
             )
             response.raise_for_status()
+            return response
         except requests.HTTPError as e:
             logger.error(f"Error removing deployment secrets {e}")
 
