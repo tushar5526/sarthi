@@ -42,7 +42,7 @@ services:
       - vault
 
   loki:
-    image: grafana/loki:main-8978ecf
+    image: grafana/loki:2.9.5
     restart: always
     ports:
       - 127.0.0.1:3100:3100
