@@ -4,6 +4,7 @@ services:
   nginx:
     image: nginx:1.26.0
     restart: always
+    # container name is used internally in code - don't change it
     container_name: sarthi_nginx
     ports:
       - "80:80"
@@ -62,7 +63,6 @@ services:
   grafana:
     image: grafana/grafana:10.1.10-ubuntu
     restart: always
-    container_name: grafana
     volumes:
       - grafana:/var/lib/grafana
       - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
