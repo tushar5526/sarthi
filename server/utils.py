@@ -12,9 +12,6 @@ from dataclasses import dataclass
 import requests
 import yaml
 from dotenv import dotenv_values
-from fastapi import HTTPException
-
-import server.constants as constants
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +21,8 @@ class DeploymentConfig:
     project_name: str
     branch_name: str
     project_git_url: str
-    compose_file_location: str = constants.COMPOSE_FILE
-    rest_action: str = constants.POST
+    compose_file_location: str = "docker-compose.yml"
+    rest_action: str = "POST"
 
     def __post_init__(self):
         self.branch_name_raw = self.branch_name
@@ -33,25 +30,22 @@ class DeploymentConfig:
 
         self.project_name = re.sub(r"[^a-zA-Z]", "", self.project_name.lower())
         self.project_name = (
-            self.project_name[:10] if len(self.project_name) > 10 else self.project_name
+            self.project_name[-10:]
+            if len(self.project_name) > 10
+            else self.project_name
         )
         self.branch_name = re.sub(r"[^a-zA-Z]", "", self.branch_name.lower())
         self.branch_name = (
             self.branch_name[:20] if len(self.branch_name) > 20 else self.branch_name
         )
-        if self.branch_name == constants.DEFAULT_SECRETS_PATH:
-            raise HTTPException(
-                400,
-                f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword in Sarthi. Please use a different branch name",
-            )
 
     def get_project_hash(self):
         return get_random_stub(f"{self.project_name}:{self.branch_name}", 10)
 
     def __repr__(self):
         return (
-            f"DeploymentConfig({self.project_name_raw=!r}, {self.branch_name_raw=!r}, {self.project_git_url=!r}, "
-            f"{self.compose_file_location=!r}, {self.rest_action=!r})"
+            f"DeploymentConfig({self.project_name_raw!r}, {self.branch_name_raw!r}, {self.project_git_url!r}, "
+            f"{self.compose_file_location!r}, {self.rest_action!r})"
         )
 
 
@@ -80,24 +74,14 @@ services:
     def start_services(
         self, nginx_port: str, conf_file_path: str, deployment_namespace: str
     ):
-        try:
-            self._generate_processed_compose_file(
-                nginx_port, conf_file_path, deployment_namespace
-            )
-        except Exception as e:
-            logger.error(f"Error generating processed compose file: {e}")
-            raise HTTPException(500, e)
+        self._generate_processed_compose_file(
+            nginx_port, conf_file_path, deployment_namespace
+        )
 
         command = ["docker-compose", "up", "-d", "--build"]
         project_dir = pathlib.Path(self._compose_file_location).parent
-
-        try:
-            subprocess.run(command, check=True, cwd=project_dir)
-            logger.info("Docker Compose up -d --build executed successfully.")
-        except Exception as e:
-            msg = f"An unexpected error occurred while starting services: {e}"
-            logger.error(msg)
-            raise HTTPException(500, msg)
+        subprocess.run(command, check=True, cwd=project_dir)
+        logger.info("Docker Compose up -d --build executed successfully.")
 
     def remove_services(self):
         if not os.path.exists(pathlib.Path(self._compose_file_location).parent):
@@ -105,13 +89,8 @@ services:
             return
         command = ["docker-compose", "down", "-v"]
         project_dir = pathlib.Path(self._compose_file_location).parent
-        try:
-            subprocess.run(command, check=True, cwd=project_dir)
-            logger.info("Docker Compose down -v executed successfully.")
-        except Exception as e:
-            msg = f"An unexpected error occurred while starting services: {e}"
-            logger.error(msg)
-            raise HTTPException(500, msg)
+        subprocess.run(command, check=True, cwd=project_dir)
+        logger.info("Docker Compose down -v executed successfully.")
 
     def _generate_processed_compose_file(
         self, nginx_port: str, conf_file_path: str, deployment_namespace: str
@@ -224,21 +203,11 @@ class NginxHelper:
         self._branch_name = config.branch_name
         self._project_hash = config.get_project_hash()
         self._port = None
-        self._host_name = (
-            os.environ.get("DEPLOYMENT_HOST") or constants.DOCKER_HOST_NETWORK_DOMAIN
-        )
-        self._start_port = (
-            os.environ.get("DEPLOYMENT_PORT_START")
-            or constants.DEFAULT_DEPLOYMENT_PORT_START
-        )
-        self._end_port = (
-            os.environ.get("DEPLOYMENT_PORT_END")
-            or constants.DEFAULT_DEPLOYMENT_PORT_END
-        )
-        self._DOMAIN_NAME = os.environ.get("DOMAIN_NAME") or constants.LOCALHOST
-        self._DOCKER_INTERNAL_HOSTNAME: typing.Final[
-            str
-        ] = constants.DOCKER_HOST_NETWORK_DOMAIN
+        self._host_name = os.environ.get("DEPLOYMENT_HOST") or "host.docker.internal"
+        self._start_port = os.environ.get("DEPLOYMENT_PORT_START") or 15000
+        self._end_port = os.environ.get("DEPLOYMENT_PORT_END") or 20000
+        self._DOMAIN_NAME = os.environ.get("DOMAIN_NAME") or "localhost"
+        self._DOCKER_INTERNAL_HOSTNAME: typing.Final[str] = "host.docker.internal"
         self._outer_conf_base_path = outer_conf_base_path
         self._deployment_project_path = deployment_project_path
         self._conf_file_name = f"{self._project_name}-{self._project_hash}.conf"
@@ -262,7 +231,7 @@ class NginxHelper:
                     self._port = current_port
                     return str(current_port)
 
-        raise HTTPException(500, "Could not find a free port in the specified range")
+        raise RuntimeError("Could not find a free port in the specified range")
 
     def generate_outer_proxy_conf_file(self, port: str) -> str:
         port = port or self._port
@@ -324,14 +293,10 @@ class NginxHelper:
 
     def reload_nginx(self):
         self._test_nginx_config()
-        try:
-            subprocess.run(
-                ["docker", "exec", "sarthi_nginx", "nginx", "-s", "reload"],
-                check=True,
-            )
-        except Exception as e:
-            logger.error(e)
-            raise HTTPException(500, "Failed to reload Nginx for the deployment")
+        subprocess.run(
+            ["docker", "exec", "sarthi_nginx", "nginx", "-s", "reload"],
+            check=True,
+        )
         logger.info("Nginx reloaded successfully.")
 
     def remove_outer_proxy(self):
@@ -348,89 +313,57 @@ class SecretsHelper:
     def __init__(self, project_name, branch_name, project_path):
         vault_url = os.environ.get("VAULT_BASE_URL")
         vault_token = os.environ.get("VAULT_TOKEN")
-        if not vault_url or not vault_token:
-            raise HTTPException(500, "Vault is down or not configured correctly.")
         self._project_path = project_path
         self._secrets_namespace = f"{project_name}/{branch_name}"
         self._secret_url = f"{vault_url}/v1/kv/data/{self._secrets_namespace}"
-        self._default_secret_url = (
-            f"{vault_url}/v1/kv/data/{project_name}/default-dev-secrets"
-        )
         self._secret_metadata_url = (
             f"{vault_url}/v1/kv/metadata/{self._secrets_namespace}"
         )
         self._headers = {"X-Vault-Token": vault_token}
 
-    def _write_secrets_to_vault(self, secret_path_url, secrets: typing.Dict):
-        try:
-            response = requests.post(
-                url=secret_path_url,
-                headers=self._headers,
-                data=json.dumps(
-                    {"data": {key: value for key, value in secrets.items()}}
-                ),
-            )
-            response.raise_for_status()
-        except requests.HTTPError as e:
-            logger.error(f"Error writing secrets to {secret_path_url}", e)
-            raise HTTPException(500, e)
-
-    def _read_secrets_from_vault(self, secret_path_url):
-        try:
-            response = requests.get(url=secret_path_url, headers=self._headers)
-        except requests.HTTPError:
-            logger.error(f"Cannot read secrets from vault for {secret_path_url}")
-            raise HTTPException(
-                500, f"Cannot read secrets from vault for {secret_path_url}"
-            )
-        if response.status_code != 200:
-            return None
-        return response.json()
-
     def _create_env_placeholder(self):
-        # check whether we can copy env vars from the default-dev-secrets path
-        default_response = self._read_secrets_from_vault(self._default_secret_url)
+        sample_envs = {"key": "secret-value"}
+        # check for .env.sample in folder and load those sample .env vars in vault
+        sample_env_path = os.path.join(self._project_path, ".env.sample")
+        if os.path.exists(sample_env_path):
+            sample_envs = dotenv_values(sample_env_path)
 
-        if not default_response:
-            logger.debug(
-                "Default secrets not found, ingesting secrets from sample envs"
-            )
-            # check for .env.sample in folder and load those sample .env vars in vault
-            sample_envs = {"key": "secret-value"}
-            for sample_env_filename in constants.SAMPLE_ENV_FILENAMES:
-                sample_env_path = os.path.join(self._project_path, sample_env_filename)
-                if os.path.exists(sample_env_path):
-                    sample_envs = dotenv_values(sample_env_path)
-                    break
-            self._write_secrets_to_vault(self._default_secret_url, sample_envs)
-            self._write_secrets_to_vault(self._secret_url, sample_envs)
-        else:
-            self._write_secrets_to_vault(self._secret_url, default_response)
+        sample_env_path = os.path.join(self._project_path, "sample.env")
+        if os.path.exists(sample_env_path):
+            sample_envs = dotenv_values(sample_env_path)
+
+        response = requests.post(
+            url=self._secret_url,
+            headers=self._headers,
+            data=json.dumps(
+                {"data": {key: value for key, value in sample_envs.items()}}
+            ),
+        )
+        response.raise_for_status()
+        logger.debug(f"Successfully loaded sample env vars in value {response.json()}")
 
     def inject_env_variables(self, project_path):
-        secret_data = self._read_secrets_from_vault(self._secret_url)
-
-        if not secret_data:
-            logger.info(f"No secrets found in vault for {self._secrets_namespace}")
+        response = requests.get(url=self._secret_url, headers=self._headers)
+        if response.status_code != 200:
+            logger.debug(f"No secrets found in vault for {self._secrets_namespace}")
             self._create_env_placeholder()
             return
-
-        logger.info(f"Found secrets for {self._secrets_namespace}")
+        logger.debug(f"Found secrets for {self._secrets_namespace}")
+        secret_data = response.json()
         with open(os.path.join(project_path, ".env"), "w") as file:
             for key, value in secret_data["data"]["data"].items():
                 file.write(f'{key}="{value}"\n')
 
     def cleanup_deployment_variables(self):
+        response = requests.delete(url=self._secret_metadata_url, headers=self._headers)
+        logger.debug(
+            f"Tried Removing Deployment variables from Vault {response.status_code}"
+        )
         try:
-            response = requests.delete(
-                url=self._secret_metadata_url, headers=self._headers
-            )
-            logger.debug(
-                f"Tried Removing Deployment variables from Vault {response.status_code}"
-            )
             response.raise_for_status()
         except requests.HTTPError as e:
-            logger.error(f"Error removing deployment secrets {e}")
+            logger.debug(f"Error removing deployment secrets {e}")
+        return response
 
 
 def get_random_stub(project_name: str, length: int = 64) -> str:
@@ -439,18 +372,5 @@ def get_random_stub(project_name: str, length: int = 64) -> str:
 
 
 def load_yaml_file(filename: str):
-    try:
-        with open(filename) as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError as e:
-        logging.error(f"File not found: {filename}. Error: {str(e)}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"File not found: {filename}. Please provie valid compose file location in config",
-        )
-    except yaml.YAMLError as e:
-        logging.error(f"Error parsing YAML file: {filename}. Error: {str(e)}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Error parsing YAML file: {filename}",
-        )
+    with open(filename) as file:
+        return yaml.safe_load(file)
