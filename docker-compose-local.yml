@@ -2,7 +2,7 @@ version: "3"
 
 services:
   nginx:
-    image: nginx:1.26.0
+    image: nginx:latest
     restart: always
     container_name: sarthi_nginx
     ports:
@@ -35,7 +35,7 @@ services:
       - vault
 
   vault:
-    image: hashicorp/vault:1.16
+    image: vault:1.12.3
     restart: always
     ports:
       - "8200:8200"
