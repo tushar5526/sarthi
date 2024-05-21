@@ -39,6 +39,11 @@ class DeploymentConfig:
         self.branch_name = (
             self.branch_name[:20] if len(self.branch_name) > 20 else self.branch_name
         )
+        if self.branch_name == constants.DEFAULT_SECRETS_PATH:
+            raise HTTPException(
+                400,
+                f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword in Sarthi. Please use a different branch name",
+            )
 
     def get_project_hash(self):
         return get_random_stub(f"{self.project_name}:{self.branch_name}", 10)
@@ -348,45 +353,69 @@ class SecretsHelper:
         self._project_path = project_path
         self._secrets_namespace = f"{project_name}/{branch_name}"
         self._secret_url = f"{vault_url}/v1/kv/data/{self._secrets_namespace}"
+        self._default_secret_url = (
+            f"{vault_url}/v1/kv/data/{project_name}/default-dev-secrets"
+        )
         self._secret_metadata_url = (
             f"{vault_url}/v1/kv/metadata/{self._secrets_namespace}"
         )
         self._headers = {"X-Vault-Token": vault_token}
 
-    def _create_env_placeholder(self):
-        sample_envs = {"key": "secret-value"}
-        # check for .env.sample in folder and load those sample .env vars in vault
-        for sample_env_filename in constants.SAMPLE_ENV_FILENAMES:
-            sample_env_path = os.path.join(self._project_path, sample_env_filename)
-            if os.path.exists(sample_env_path):
-                sample_envs = dotenv_values(sample_env_path)
-                break
-
+    def _write_secrets_to_vault(self, secret_path_url, secrets: typing.Dict):
         try:
             response = requests.post(
-                url=self._secret_url,
+                url=secret_path_url,
                 headers=self._headers,
                 data=json.dumps(
-                    {"data": {key: value for key, value in sample_envs.items()}}
+                    {"data": {key: value for key, value in secrets.items()}}
                 ),
             )
             response.raise_for_status()
         except requests.HTTPError as e:
-            logger.error(e)
+            logger.error(f"Error writing secrets to {secret_path_url}", e)
             raise HTTPException(500, e)
 
-        logger.debug(f"Successfully loaded sample env vars in value {response.json()}")
+    def _read_secrets_from_vault(self, secret_path_url):
+        try:
+            response = requests.get(url=secret_path_url, headers=self._headers)
+        except requests.HTTPError:
+            logger.error(f"Cannot read secrets from vault for {secret_path_url}")
+            raise HTTPException(
+                500, f"Cannot read secrets from vault for {secret_path_url}"
+            )
+        if response.status_code != 200:
+            return None
+        return response.json()
+
+    def _create_env_placeholder(self):
+        # check whether we can copy env vars from the default-dev-secrets path
+        default_response = self._read_secrets_from_vault(self._default_secret_url)
+
+        if not default_response:
+            logger.debug(
+                "Default secrets not found, ingesting secrets from sample envs"
+            )
+            # check for .env.sample in folder and load those sample .env vars in vault
+            sample_envs = {"key": "secret-value"}
+            for sample_env_filename in constants.SAMPLE_ENV_FILENAMES:
+                sample_env_path = os.path.join(self._project_path, sample_env_filename)
+                if os.path.exists(sample_env_path):
+                    sample_envs = dotenv_values(sample_env_path)
+                    break
+            self._write_secrets_to_vault(self._default_secret_url, sample_envs)
+            self._write_secrets_to_vault(self._secret_url, sample_envs)
+        else:
+            self._write_secrets_to_vault(self._secret_url, default_response)
 
     def inject_env_variables(self, project_path):
-        response = requests.get(url=self._secret_url, headers=self._headers)
+        secret_data = self._read_secrets_from_vault(self._secret_url)
 
-        if response.status_code != 200:
+        if not secret_data:
             logger.info(f"No secrets found in vault for {self._secrets_namespace}")
             self._create_env_placeholder()
             return
 
         logger.info(f"Found secrets for {self._secrets_namespace}")
-        secret_data = response.json()
         with open(os.path.join(project_path, ".env"), "w") as file:
             for key, value in secret_data["data"]["data"].items():
                 file.write(f'{key}="{value}"\n')

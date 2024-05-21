@@ -1,3 +1,5 @@
+# Can't be used as branch names for now
+DEFAULT_SECRETS_PATH = ["default-dev-secrets"]
 COMPOSE_FILE = "docker-compose.yml"
 
 GET = "GET"
