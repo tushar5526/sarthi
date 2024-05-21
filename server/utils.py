@@ -102,7 +102,7 @@ services:
     def remove_services(self):
         if not os.path.exists(pathlib.Path(self._compose_file_location).parent):
             logger.info(f"{self._compose_file_location} is already deleted!")
-            return
+            return "Deployment already deleted"
         command = ["docker-compose", "down", "-v"]
         project_dir = pathlib.Path(self._compose_file_location).parent
         try:
@@ -278,7 +278,9 @@ class NginxHelper:
 
         if not self._test_nginx_config():
             os.remove(self._outer_proxy_path)
-            raise Exception("Failed creating outer_proxy_conf_file", conf)
+            raise HTTPException(
+                500, "Failed creating outer_proxy_conf_file. Check with admin"
+            )
         return conf
 
     def generate_project_proxy_conf_file(
@@ -320,7 +322,13 @@ class NginxHelper:
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"Error testing Nginx configuration: {e}")
-            raise Exception(f"Nginx configs error {e}")
+            raise HTTPException(
+                500,
+                "Error in generated Nginx configs. Check with Sarthi Admin or see logs.",
+            )
+        except Exception as e:
+            logger.error(f"Error testing Nginx configuration: {e}")
+            raise HTTPException(500, "Internal Server Error")
 
     def reload_nginx(self):
         self._test_nginx_config()
