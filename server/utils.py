@@ -24,6 +24,7 @@ class DeploymentConfig:
     project_name: str
     branch_name: str
     project_git_url: str
+    gh_token: str
     compose_file_location: str = constants.COMPOSE_FILE
     rest_action: str = constants.POST
 
@@ -43,6 +44,11 @@ class DeploymentConfig:
             raise HTTPException(
                 400,
                 f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword in Sarthi. Please use a different branch name",
+            )
+
+        if self.gh_token:
+            self.project_git_url = (
+                f"{self.project_git_url[:8]}{self.gh_token}:@{self.project_git_url[8:]}"
             )
 
     def get_project_hash(self):
