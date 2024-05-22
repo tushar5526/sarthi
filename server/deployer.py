@@ -86,7 +86,10 @@ class Deployer:
 
     def _configure_outer_proxy(self):
         if not self._project_nginx_port:
-            raise Exception("Project Proxy not deployed, project_nginx_port is None")
+            logger.error("Project Proxy not deployed, project_nginx_port is None")
+            raise HTTPException(
+                "Project Proxy not deployed, project_nginx_port is None"
+            )
         self._nginx_helper.generate_outer_proxy_conf_file(self._project_nginx_port)
         self._nginx_helper.reload_nginx()
 
