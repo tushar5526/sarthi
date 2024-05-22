@@ -69,7 +69,7 @@ def test_start_services_success(compose_helper, mocker):
     ), "Deployment (Nginx) Proxy is missing in processed services"
 
     mocked_run.assert_called_once_with(
-        ["docker-compose", "up", "-d", "--build"], check=True, cwd=pathlib.Path(".")
+        ["docker", "compose", "up", "-d", "--build"], check=True, cwd=pathlib.Path(".")
     )
 
 
@@ -110,7 +110,7 @@ def test_remove_services_success(compose_helper, mocker):
 
     # Then
     mocked_run.assert_called_once_with(
-        ["docker-compose", "down", "-v"], check=True, cwd=pathlib.Path(".")
+        ["docker", "compose", "down", "-v"], check=True, cwd=pathlib.Path(".")
     )
 
 
