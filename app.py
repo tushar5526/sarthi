@@ -19,6 +19,7 @@ app.config = {"SECRET_TEXT": os.environ.get("SECRET_TEXT")}
 
 env = os.environ.get("ENV").upper() == constants.LOCAL
 logging.basicConfig(level=logging.DEBUG if env else logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -27,7 +28,7 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
         data = jwt.decode(token, app.config["SECRET_TEXT"], algorithms=["HS256"])
         logging.debug(f"Authenticated successfully {data}")
     except Exception as e:
-        logging.info(f"Error while authenticating {e}")
+        logging.error(f"Error while authenticating {e}")
         raise HTTPException(status_code=401, detail="Invalid token")
     return data
 

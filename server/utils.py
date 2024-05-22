@@ -41,6 +41,9 @@ class DeploymentConfig:
             self.branch_name[:20] if len(self.branch_name) > 20 else self.branch_name
         )
         if self.branch_name == constants.DEFAULT_SECRETS_PATH:
+            logger.error(
+                f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword in Sarthi. Please use a different branch name",
+            )
             raise HTTPException(
                 400,
                 f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword in Sarthi. Please use a different branch name",
@@ -268,6 +271,7 @@ class NginxHelper:
                     self._port = current_port
                     return str(current_port)
 
+        logger.error("Could not find a free port in the specified range")
         raise HTTPException(500, "Could not find a free port in the specified range")
 
     def generate_outer_proxy_conf_file(self, port: str) -> str:
@@ -284,6 +288,7 @@ class NginxHelper:
 
         if not self._test_nginx_config():
             os.remove(self._outer_proxy_path)
+            logger.error("Failed creating outer_proxy_conf_file. Check with admin")
             raise HTTPException(
                 500, "Failed creating outer_proxy_conf_file. Check with admin"
             )
@@ -363,6 +368,7 @@ class SecretsHelper:
         vault_url = os.environ.get("VAULT_BASE_URL")
         vault_token = os.environ.get("VAULT_TOKEN")
         if not vault_url or not vault_token:
+            logger.error("Vault is down or not configured correctly.")
             raise HTTPException(500, "Vault is down or not configured correctly.")
         self._project_path = project_path
         self._secrets_namespace = f"{project_name}/{branch_name}"
@@ -426,7 +432,7 @@ class SecretsHelper:
 
     def inject_env_variables(self, project_path):
         secret_data = self._read_secrets_from_vault(self._secret_url)
-
+        
         if not secret_data:
             logger.info(f"No secrets found in vault for {self._secrets_namespace}")
             secret_data = self._create_env_placeholder()
