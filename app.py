@@ -58,6 +58,7 @@ async def deploy(request: Request, token: dict = Depends(verify_token)):
         branch_name=data.get("branch"),
         project_git_url=data.get("project_git_url"),
         compose_file_location=data.get("compose_file_location"),
+        gh_token=data.get("gh_token"),
         rest_action=request.method,
     )
     deployer = Deployer(config)
