@@ -425,18 +425,24 @@ def test_inject_env_variables_with_no_secrets(
     mock_response.status_code = 404
     mock_requests.get.return_value = mock_response
     mock_create_env_placeholder = MagicMock()
+    mock_create_env_placeholder.return_value = {"key": "test"}
+
     with patch.object(
         secrets_helper_instance, "_create_env_placeholder", mock_create_env_placeholder
     ):
-        # Calling the method under test
-        secrets_helper_instance.inject_env_variables("/path/to/project")
+        mock_open = MagicMock()
+        mock_os.path.join.return_value = "/path/to/project/.env"
+        with patch("builtins.open", mock_open):
+            # Calling the method under test
+            secrets_helper_instance.inject_env_variables("/path/to/project")
 
-        # Assertions
-        mock_requests.get.assert_called_once_with(
-            url="http://vault:8200/v1/kv/data/project_name/branch_name",
-            headers={"X-Vault-Token": "hvs.randomToken"},
-        )
-        mock_create_env_placeholder.assert_called_once_with()
+            # Assertions
+            mock_requests.get.assert_called_once_with(
+                url="http://vault:8200/v1/kv/data/project_name/branch_name",
+                headers={"X-Vault-Token": "hvs.randomToken"},
+            )
+            mock_create_env_placeholder.assert_called_once()
+            mock_open.assert_called_once_with("/path/to/project/.env", "w")
 
 
 @patch("server.utils.requests.delete", autospec=True)
