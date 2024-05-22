@@ -322,6 +322,20 @@ def test_create_deployment_config_with_reserved_branch_name():
     assert deployment_config.branch_name == "defaultdevsecrets"
 
 
+def test_create_deployment_config_for_private_repos():
+    deployment_config = DeploymentConfig(
+        project_name="test-project-name",
+        branch_name=constants.DEFAULT_SECRETS_PATH,
+        project_git_url="https://github.com/tushar5526/test-project-name.git",
+        rest_action="POST",
+        gh_token="random-pat-token",
+    )
+    assert (
+        deployment_config.project_git_url
+        == "https://random-pat-token:@github.com/tushar5526/test-project-name.git"
+    )
+
+
 @patch("server.utils.os")
 @patch("server.utils.requests")
 def test_create_env_placeholder_with_sample_env_file(
