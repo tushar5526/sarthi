@@ -24,7 +24,7 @@ class DeploymentConfig:
     project_name: str
     branch_name: str
     project_git_url: str
-    gh_token: str
+    gh_token: str = None
     compose_file_location: str = constants.COMPOSE_FILE
     rest_action: str = constants.POST
 
