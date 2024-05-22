@@ -94,7 +94,7 @@ services:
             logger.error(f"Error generating processed compose file: {e}")
             raise HTTPException(500, e)
 
-        command = ["docker-compose", "up", "-d", "--build"]
+        command = ["docker", "compose", "up", "-d", "--build"]
         project_dir = pathlib.Path(self._compose_file_location).parent
 
         try:
@@ -109,7 +109,7 @@ services:
         if not os.path.exists(pathlib.Path(self._compose_file_location).parent):
             logger.info(f"{self._compose_file_location} is already deleted!")
             return "Deployment already deleted"
-        command = ["docker-compose", "down", "-v"]
+        command = ["docker", "compose", "down", "-v"]
         project_dir = pathlib.Path(self._compose_file_location).parent
         try:
             subprocess.run(command, check=True, cwd=project_dir)
