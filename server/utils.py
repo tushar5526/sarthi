@@ -399,7 +399,8 @@ class SecretsHelper:
             )
         if response.status_code != 200:
             return None
-        return response.json()
+        res_json = response.json()
+        return res_json["data"]["data"]
 
     def _create_env_placeholder(self):
         # check whether we can copy env vars from the default-dev-secrets path
@@ -418,20 +419,21 @@ class SecretsHelper:
                     break
             self._write_secrets_to_vault(self._default_secret_url, sample_envs)
             self._write_secrets_to_vault(self._secret_url, sample_envs)
-        else:
-            self._write_secrets_to_vault(self._secret_url, default_response)
+            return sample_envs
+
+        self._write_secrets_to_vault(self._secret_url, default_response)
+        return default_response
 
     def inject_env_variables(self, project_path):
         secret_data = self._read_secrets_from_vault(self._secret_url)
 
         if not secret_data:
             logger.info(f"No secrets found in vault for {self._secrets_namespace}")
-            self._create_env_placeholder()
-            return
+            secret_data = self._create_env_placeholder()
 
         logger.info(f"Found secrets for {self._secrets_namespace}")
         with open(os.path.join(project_path, ".env"), "w") as file:
-            for key, value in secret_data["data"]["data"].items():
+            for key, value in secret_data.items():
                 file.write(f'{key}="{value}"\n')
 
     def cleanup_deployment_variables(self):
