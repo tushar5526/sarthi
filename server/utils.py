@@ -432,7 +432,7 @@ class SecretsHelper:
 
     def inject_env_variables(self, project_path):
         secret_data = self._read_secrets_from_vault(self._secret_url)
-        
+
         if not secret_data:
             logger.info(f"No secrets found in vault for {self._secrets_namespace}")
             secret_data = self._create_env_placeholder()
