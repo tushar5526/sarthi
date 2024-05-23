@@ -10,6 +10,8 @@ Sarthi uses other open-source projects to export logs, enable monitoring, manage
 
 It is meant to be used along with [sarthi-deploy](https://github.com/tushar5526/sarthi-deploy) GitHub Action for setting up preview environments in your project. Every time there is a new branch or a PR created, Sarthi GHA will create a preview environment for that. It also takes care of deleting preview environments when respective branches or PRs are merged.
 
+PS: Service Developers can directly jump to the [Developer Guide](#developer-guide)
+
 ## Pre-requisites 🛠️
 
 1. Dockerized projects with a `docker-compose`.
@@ -70,7 +72,22 @@ The following services are exposed:
 
 4. [Sarthi](https://github.com/tushar5526/sarthi) Backend for GHA. [http://api.sarthi.your_domain.io](http://api.sarthi.your_domain.io)
 
-## Tips 💡
+## Developer Guide
+
+### Exposing services
+
+1. Every service in `docker-compose` of which ports are exposed, is exposed to developers via a unique URL by Sarthi.
+2. Sarthi currently only support fetching secrets from the vault and storing them in `.env` before deploying, so it's recommended to avoid `env_file` command or use it with `.env` files.
+
+### Secrets Discovery and namespacing
+
+1. For each PR, Sarthi creates a preview environment using the `docker-compose` specified.
+2. Sarthi finds the secret for the service as follows.
+   - Check the vault under the `project/feature-branch` namespace and find secrets there.
+   - There is a default namespace reserved for developers to specify default secrets for all the PS. Secrets defined under `project/default-dev-secrets` are used if `project/feature-branch` secret path is empty.
+   - If the default namespace is not configured as well, Sarthi automatically tries to find `sample.env`, `env.sample`, `.env.sample` and similar sample env files in the root directory and loads those sample environment variables to both `default-dev-secrets` and `project/feature-branch`
+
+### Tips 💡
 
 1. Use `docker-compose's` service discovery to connect within the same services in your projects.
 
