@@ -33,5 +33,5 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}/my-image:latest
-          ghcr.io/${{ github.repository }}/my-image:${{ github.event.release.tag_name }}
+          ghcr.io/srijan-ss02/sarthi/my-image:latest
+          ghcr.io/srijan-ss02/sarthi/my-image:${{ github.event.release.tag_name}}
