@@ -75,15 +75,17 @@ The following services are exposed:
 ## Developer Guide
 
 ### Exposing services
+
 1. Every service in `docker-compose` of which ports are exposed, is exposed to developers via a unique URL by Sarthi.
-2. Sarthi currently only support fetching secrets from the vault and storing them in `.env` before deploying, so it's recommended to avoid `env_file` command or use it with `.env` files. 
+2. Sarthi currently only support fetching secrets from the vault and storing them in `.env` before deploying, so it's recommended to avoid `env_file` command or use it with `.env` files.
 
 ### Secrets Discovery and namespacing
+
 1. For each PR, Sarthi creates a preview environment using the `docker-compose` specified.
 2. Sarthi finds the secret for the service as follows.
    - Check the vault under the `project/feature-branch` namespace and find secrets there.
    - There is a default namespace reserved for developers to specify default secrets for all the PS. Secrets defined under `project/default-dev-secrets` are used if `project/feature-branch` secret path is empty.
-   - If the default namespace is not configured as well, Sarthi automatically tries to find `sample.env`, `env.sample`, `.env.sample` and similar sample env files in the root directory and loads those sample environment variables to both `default-dev-secrets` and `project/feature-branch` 
+   - If the default namespace is not configured as well, Sarthi automatically tries to find `sample.env`, `env.sample`, `.env.sample` and similar sample env files in the root directory and loads those sample environment variables to both `default-dev-secrets` and `project/feature-branch`
 
 ### Tips 💡
 
