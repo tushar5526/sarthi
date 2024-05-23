@@ -37,5 +37,5 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/srijan-ss02/sarthi/my-image:latest
-          ghcr.io/srijan-ss02/sarthi/my-image:${{ env.RELEASE_TAG }}
+          ghcr.io/${{ github.repository }}/sarthi:latest
+          ghcr.io/${{ github.repository }}/sarthi:${{ env.RELEASE_TAG }}
