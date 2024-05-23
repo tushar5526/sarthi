@@ -26,6 +26,10 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Convert repository name to lowercase
+      run: echo "REPOSITORY=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+  
 
     - name: Get release tag name
       id: vars
@@ -37,5 +41,5 @@ jobs:
         context: .
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}/sarthi:latest
-          ghcr.io/${{ github.repository }}/sarthi:${{ env.RELEASE_TAG }}
+          ghcr.io/${{ env.REPOSITORY }}/sarthi:latest
+          ghcr.io/${{ env.REPOSITORY }}/sarthi:${{ env.RELEASE_TAG }}
