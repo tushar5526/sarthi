@@ -4,10 +4,9 @@ services:
   nginx:
     image: nginx:1.26.0
     restart: always
-    # container name is used internally in code - don't change it
     container_name: sarthi_nginx
     ports:
-      - "80:80"
+      - "${PORT_NGINX:-80}:80"   # Modified: Port number made variable
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -23,8 +22,6 @@ services:
     build: .
     restart: always
     volumes:
-      # hack to bypass file resource sharing error
-      # not tested and no support for windows server 💩
       - ./deployments:${DEPLOYMENTS_MOUNT_DIR:-/deployments}
       - ./nginx-confs:${NGINX_PROXY_CONF_LOCATION:-/nginx-confs}
       - /var/run/docker.sock:/var/run/docker.sock
@@ -45,7 +42,7 @@ services:
     image: grafana/loki:2.9.5
     restart: always
     ports:
-      - 127.0.0.1:3100:3100
+      - "${PORT_LOKI:-3100}:3100"   # Modified: Port number made variable
     volumes:
       - ./logging-config/loki:/etc/loki
     command: -config.file=/etc/loki/loki-config.yaml
@@ -63,6 +60,8 @@ services:
   grafana:
     image: grafana/grafana:10.1.10-ubuntu
     restart: always
+    ports:
+      - "${PORT_GRAFANA:-3000}:3000"   # Modified: Port number made variable
     volumes:
       - grafana:/var/lib/grafana
       - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards

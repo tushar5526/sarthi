@@ -1,0 +1,195 @@
+name: sarthi
+services:
+  grafana:
+    depends_on:
+      loki:
+        condition: service_started
+    image: grafana/grafana:10.1.10-ubuntu
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      target: 3000
+      published: "3000"
+      protocol: tcp
+    restart: always
+    volumes:
+    - type: volume
+      source: grafana
+      target: /var/lib/grafana
+      volume: {}
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/logging-config/grafana/dashboards
+      target: /etc/grafana/provisioning/dashboards
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/logging-config/grafana/datasources
+      target: /etc/grafana/provisioning/datasources
+      bind:
+        create_host_path: true
+  loki:
+    command:
+    - -config.file=/etc/loki/loki-config.yaml
+    depends_on:
+      promtail:
+        condition: service_started
+    image: grafana/loki:2.9.5
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      target: 3100
+      published: "3100"
+      protocol: tcp
+    restart: always
+    volumes:
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/logging-config/loki
+      target: /etc/loki
+      bind:
+        create_host_path: true
+  nginx:
+    container_name: sarthi_nginx
+    depends_on:
+      grafana:
+        condition: service_started
+      portainer:
+        condition: service_started
+      sarthi:
+        condition: service_started
+      vault:
+        condition: service_started
+    extra_hosts:
+      host.docker.internal: host-gateway
+    image: nginx:1.26.0
+    networks:
+      default: null
+    ports:
+    - mode: ingress
+      target: 80
+      published: "80"
+      protocol: tcp
+    restart: always
+    volumes:
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/nginx-confs
+      target: /etc/nginx/conf.d
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/sarthi.conf
+      target: /etc/nginx/conf.d/sarthi.conf
+      bind:
+        create_host_path: true
+  portainer:
+    image: portainer/portainer-ce:2.20.2
+    networks:
+      default: null
+    restart: unless-stopped
+    volumes:
+    - type: volume
+      source: portainer_data
+      target: /data
+      volume: {}
+    - type: bind
+      source: /var/run/docker.sock
+      target: /var/run/docker.sock
+      bind:
+        create_host_path: true
+  promtail:
+    command:
+    - -config.file=/etc/promtail/promtail-config.yaml
+    image: grafana/promtail:main-8978ecf
+    networks:
+      default: null
+    restart: always
+    volumes:
+    - type: bind
+      source: /var/log
+      target: /var/log
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/logging-config/promtail
+      target: /etc/promtail
+      bind:
+        create_host_path: true
+  sarthi:
+    build:
+      context: /Users/gauravjisrivastava/Desktop/sarthi
+      dockerfile: Dockerfile
+    depends_on:
+      vault:
+        condition: service_started
+    environment:
+      DEPLOYMENTS_MOUNT_DIR: your_value
+      DOMAIN_NAME: localhost
+      ENV: local
+      NGINX_PROXY_CONF_LOCATION: your_value
+      SECRET_TEXT: your_value
+      VAULT_BASE_URL: http://vault:8200
+      VAULT_TOKEN: your_value
+    extra_hosts:
+      host.docker.internal: host-gateway
+    networks:
+      default: null
+    restart: always
+    volumes:
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/deployments
+      target: your_value
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/nginx-confs
+      target: your_value
+      bind:
+        create_host_path: true
+    - type: bind
+      source: /var/run/docker.sock
+      target: /var/run/docker.sock
+      bind:
+        create_host_path: true
+  vault:
+    cap_add:
+    - IPC_LOCK
+    command:
+    - vault
+    - server
+    - -config=/vault/config/vault.json
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_ADDRESS: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - wget --spider http://127.0.0.1:8200/v1/sys/health || exit 1
+      timeout: 5s
+      interval: 10s
+      retries: 3
+    image: hashicorp/vault:1.16
+    networks:
+      default: null
+    restart: always
+    volumes:
+    - type: bind
+      source: /Users/gauravjisrivastava/Desktop/sarthi/vault/vault.json
+      target: /vault/config/vault.json
+      bind:
+        create_host_path: true
+    - type: volume
+      source: vault-secrets
+      target: /vault/file
+      volume: {}
+networks:
+  default:
+    name: sarthi_default
+volumes:
+  grafana:
+    name: sarthi_grafana
+  portainer_data:
+    name: sarthi_portainer_data
+  vault-secrets:
+    name: sarthi_vault-secrets
