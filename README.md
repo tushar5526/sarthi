@@ -92,7 +92,11 @@ The following services are exposed:
 
 1. Use `docker-compose's` service discovery to connect within the same services in your projects.
 
-## High-Level Architecture
+## Contributor's Guide
+
+A `Makefile` is provided at the project's root that can be used to set up the local environment for Sarthi easily. It needs to have [docker](https://docs.docker.com/engine/install/) installed on your system. Supported dev environments are either Mac or Linux, I have not tested it on Windows. Read more about [Makefile](https://opensource.com/article/18/8/what-how-makefile).
+
+### High-Level Architecture
 
 ![sarthi](https://github.com/tushar5526/sarthi/assets/30565750/d08cf07e-f235-457c-952d-2406920319cb)
 
