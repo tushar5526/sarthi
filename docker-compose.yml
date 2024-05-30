@@ -6,7 +6,7 @@ services:
     restart: always
     container_name: sarthi_nginx
     ports:
-      - "${PORT_NGINX:-80}:80"   # Modified: Port number made variable
+      - "${PORT_NGINX:-80}:80" # Modified: Port number made variable
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -42,7 +42,7 @@ services:
     image: grafana/loki:2.9.5
     restart: always
     ports:
-      - "${PORT_LOKI:-3100}:3100"   # Modified: Port number made variable
+      - "${PORT_LOKI:-3100}:3100" # Modified: Port number made variable
     volumes:
       - ./logging-config/loki:/etc/loki
     command: -config.file=/etc/loki/loki-config.yaml
@@ -61,7 +61,7 @@ services:
     image: grafana/grafana:10.1.10-ubuntu
     restart: always
     ports:
-      - "${PORT_GRAFANA:-3000}:3000"   # Modified: Port number made variable
+      - "${PORT_GRAFANA:-3000}:3000" # Modified: Port number made variable
     volumes:
       - grafana:/var/lib/grafana
       - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards

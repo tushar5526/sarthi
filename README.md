@@ -86,8 +86,9 @@ The following services are exposed:
    - Check the vault under the `project/feature-branch` namespace and find secrets there.
    - There is a default namespace reserved for developers to specify default secrets for all the PS. Secrets defined under `project/default-dev-secrets` are used if `project/feature-branch` secret path is empty.
    - If the default namespace is not configured as well, Sarthi automatically tries to find `sample.env`, `env.sample`, `.env.sample` and similar sample env files in the root directory and loads those sample environment variables to both `default-dev-secrets` and `project/feature-branch`
-     
+
 ### Modifying docker-compose.yml
+
 1. There is a python script for modifying the docker compose file.
 
 ### Tips 💡
