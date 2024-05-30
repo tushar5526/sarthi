@@ -32,13 +32,3 @@ repos:
     hooks:
       - id: prettier
         exclude: ^(frontend/|CHANGELOG.md)
-
-  # Add the local repo for the custom hook
-  - repo: local
-    hooks:
-      - id: modify_compose # Unique identifier for the hook
-        name: Modify Docker Compose file # Descriptive name for the hook
-        entry: python3 modify_compose.py # Command to run your Python script
-        files: docker-compose.yml # File(s) to which the hook applies
-        language: python # Add this line to specify the language
-        additional_dependencies: [pyyaml]
