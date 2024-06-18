@@ -35,7 +35,7 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
 
 @app.post("/deploy")
 @app.delete("/deploy")
-async def deploy(request: Request, token: dict = Depends(verify_token)):
+async def deploy(request: Request):
     data = await request.json()
 
     try:

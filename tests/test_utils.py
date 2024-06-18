@@ -201,7 +201,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
         == """
     server {
         listen 80;
-        server_name ~afa55fd7b2.localhost;
+        server_name ~c7866191e5.localhost;
 
         location / {
             proxy_pass http://host.docker.internal:12345;
@@ -213,7 +213,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
     }
     """
     )
-    mock_open.assert_called_with("/path/to/outer/conf/testprojec-afa55fd7b2.conf", "w")
+    mock_open.assert_called_with("/path/to/outer/conf/test-proje-c7866191e5.conf", "w")
 
 
 def test_generate_project_proxy_conf_file(nginx_helper, mocker):
@@ -228,10 +228,10 @@ def test_generate_project_proxy_conf_file(nginx_helper, mocker):
     proxy_conf_path, urls = nginx_helper.generate_project_proxy_conf_file(services)
 
     # Then
-    assert proxy_conf_path == "/path/to/deployment/project/testprojec-afa55fd7b2.conf"
+    assert proxy_conf_path == "/path/to/deployment/project/test-proje-c7866191e5.conf"
     assert urls == [
-        "http://testprojec-testbranchname-1000-afa55fd7b2.localhost",
-        "http://testprojec-testbranchname-2000-afa55fd7b2.localhost",
+        "http://test-proje-test-branch-name-1000-c7866191e5.localhost",
+        "http://test-proje-test-branch-name-2000-c7866191e5.localhost",
     ]
 
 
@@ -291,7 +291,7 @@ def test_remove_outer_proxy(nginx_helper, mocker):
     nginx_helper.remove_outer_proxy()
 
     # Then
-    mock_remove.assert_called_with("/path/to/outer/conf/testprojec-afa55fd7b2.conf")
+    mock_remove.assert_called_with("/path/to/outer/conf/test-proje-c7866191e5.conf")
 
 
 def test_remove_outer_proxy_when_file_is_deleted_already(nginx_helper, mocker):
@@ -313,19 +313,21 @@ def test_deployment_config_repr(deployment_config):
 
 
 def test_create_deployment_config_with_reserved_branch_name():
-    deployment_config = DeploymentConfig(
-        project_name="test-project-name",
-        branch_name=constants.DEFAULT_SECRETS_PATH,
-        project_git_url="https://github.com/tushar5526/test-project-name.git",
-        rest_action="POST",
-    )
-    assert deployment_config.branch_name == "defaultdevsecrets"
+    with pytest.raises(
+        HTTPException, match=f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword"
+    ):
+        DeploymentConfig(
+            project_name="test-project-name",
+            branch_name=constants.DEFAULT_SECRETS_PATH,
+            project_git_url="https://github.com/tushar5526/test-project-name.git",
+            rest_action="POST",
+        )
 
 
 def test_create_deployment_config_for_private_repos():
     deployment_config = DeploymentConfig(
         project_name="test-project-name",
-        branch_name=constants.DEFAULT_SECRETS_PATH,
+        branch_name="branch-name",
         project_git_url="https://github.com/tushar5526/test-project-name.git",
         rest_action="POST",
         gh_token="random-pat-token",
