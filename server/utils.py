@@ -30,16 +30,11 @@ class DeploymentConfig:
 
     def __post_init__(self):
         self.branch_name_raw = self.branch_name
-        self.project_name_raw = self.project_name
 
-        self.project_name = re.sub(r"[^a-zA-Z]", "", self.project_name.lower())
-        self.project_name = (
-            self.project_name[:10] if len(self.project_name) > 10 else self.project_name
-        )
-        self.branch_name = re.sub(r"[^a-zA-Z]", "", self.branch_name.lower())
-        self.branch_name = (
-            self.branch_name[:20] if len(self.branch_name) > 20 else self.branch_name
-        )
+        self.project_name = re.sub(r"[^a-zA-Z0-9_.-]", "", self.project_name.lower())
+
+        self.branch_name = re.sub(r"[^a-zA-Z0-9_.-]", "", self.branch_name.lower())
+
         if self.branch_name == constants.DEFAULT_SECRETS_PATH:
             logger.error(
                 f"{constants.DEFAULT_SECRETS_PATH} is a reserved keyword in Sarthi. Please use a different branch name",
@@ -55,11 +50,11 @@ class DeploymentConfig:
             )
 
     def get_project_hash(self):
-        return get_random_stub(f"{self.project_name_raw}:{self.branch_name}", 10)
+        return get_random_stub(f"{self.project_name}:{self.branch_name}", 10)
 
     def __repr__(self):
         return (
-            f"DeploymentConfig({self.project_name_raw!r}, {self.branch_name_raw!r}, {self.project_git_url!r}, "
+            f"DeploymentConfig({self.project_name!r}, {self.branch_name!r}, {self.project_git_url!r}, "
             f"{self.compose_file_location!r}, {self.rest_action!r})"
         )
 
@@ -229,8 +224,19 @@ class NginxHelper:
         outer_conf_base_path: str,
         deployment_project_path: str,
     ):
-        self._project_name = config.project_name
-        self._branch_name = config.branch_name
+        # Sub domains can be of certain lenght - we can't use the whole project and branch name
+        self._project_name = (
+            config.project_name[:10]
+            if len(config.project_name) > 10
+            else config.project_name
+        )
+
+        self._branch_name = (
+            config.branch_name[:20]
+            if len(config.branch_name) > 20
+            else config.branch_name
+        )
+
         self._project_hash = config.get_project_hash()
         self._port = None
         self._host_name = (
