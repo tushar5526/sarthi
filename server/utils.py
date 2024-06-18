@@ -55,7 +55,7 @@ class DeploymentConfig:
             )
 
     def get_project_hash(self):
-        return get_random_stub(f"{self.project_name}:{self.branch_name}", 10)
+        return get_random_stub(f"{self.project_name_raw}:{self.branch_name}", 10)
 
     def __repr__(self):
         return (
