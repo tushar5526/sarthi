@@ -201,7 +201,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
         == """
     server {
         listen 80;
-        server_name ~5022fe75f1.localhost;
+        server_name ~afa55fd7b2.localhost;
 
         location / {
             proxy_pass http://host.docker.internal:12345;
@@ -213,7 +213,7 @@ def test_generate_outer_proxy_conf_file(nginx_helper, mocker):
     }
     """
     )
-    mock_open.assert_called_with("/path/to/outer/conf/testprojec-5022fe75f1.conf", "w")
+    mock_open.assert_called_with("/path/to/outer/conf/testprojec-afa55fd7b2.conf", "w")
 
 
 def test_generate_project_proxy_conf_file(nginx_helper, mocker):
@@ -228,10 +228,10 @@ def test_generate_project_proxy_conf_file(nginx_helper, mocker):
     proxy_conf_path, urls = nginx_helper.generate_project_proxy_conf_file(services)
 
     # Then
-    assert proxy_conf_path == "/path/to/deployment/project/testprojec-5022fe75f1.conf"
+    assert proxy_conf_path == "/path/to/deployment/project/testprojec-afa55fd7b2.conf"
     assert urls == [
-        "http://testprojec-testbranchname-1000-5022fe75f1.localhost",
-        "http://testprojec-testbranchname-2000-5022fe75f1.localhost",
+        "http://testprojec-testbranchname-1000-afa55fd7b2.localhost",
+        "http://testprojec-testbranchname-2000-afa55fd7b2.localhost",
     ]
 
 
@@ -291,7 +291,7 @@ def test_remove_outer_proxy(nginx_helper, mocker):
     nginx_helper.remove_outer_proxy()
 
     # Then
-    mock_remove.assert_called_with("/path/to/outer/conf/testprojec-5022fe75f1.conf")
+    mock_remove.assert_called_with("/path/to/outer/conf/testprojec-afa55fd7b2.conf")
 
 
 def test_remove_outer_proxy_when_file_is_deleted_already(nginx_helper, mocker):
