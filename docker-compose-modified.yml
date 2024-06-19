@@ -1,0 +1,95 @@
+services:
+  grafana:
+    depends_on:
+      - loki
+    image: grafana/grafana:10.1.10-ubuntu
+    ports:
+      - ${PORT_GRAFANA:-3000}:3000
+    restart: always
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
+  loki:
+    command: -config.file=/etc/loki/loki-config.yaml
+    depends_on:
+      - promtail
+    image: grafana/loki:2.9.5
+    ports:
+      - ${PORT_LOKI:-3100}:3100
+    restart: always
+    volumes:
+      - ./logging-config/loki:/etc/loki
+  nginx:
+    container_name: sarthi_nginx
+    depends_on:
+      - portainer
+      - vault
+      - sarthi
+      - grafana
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    image: nginx:1.26.0
+    ports:
+      - ${PORT_NGINX:-80}:80
+    restart: always
+    volumes:
+      - ./nginx-confs:/etc/nginx/conf.d
+      - ./sarthi.conf:/etc/nginx/conf.d/sarthi.conf
+  portainer:
+    image: portainer/portainer-ce:2.20.2
+    restart: unless-stopped
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+  promtail:
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    image: grafana/promtail:main-8978ecf
+    restart: always
+    volumes:
+      - /var/log:/var/log
+      - ./logging-config/promtail:/etc/promtail
+  sarthi:
+    build: .
+    depends_on:
+      - vault
+    environment:
+      DEPLOYMENTS_MOUNT_DIR: ${DEPLOYMENTS_MOUNT_DIR}
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+      ENV: ${ENV:-local}
+      NGINX_PROXY_CONF_LOCATION: ${NGINX_PROXY_CONF_LOCATION}
+      SECRET_TEXT: ${SECRET_TEXT}
+      VAULT_BASE_URL: ${VAULT_BASE_URL:-http://vault:8200}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: always
+    volumes:
+      - ./deployments:${DEPLOYMENTS_MOUNT_DIR:-/deployments}
+      - ./nginx-confs:${NGINX_PROXY_CONF_LOCATION:-/nginx-confs}
+      - /var/run/docker.sock:/var/run/docker.sock
+  vault:
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_ADDRESS: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+    healthcheck:
+      interval: 10s
+      retries: 3
+      test:
+        - CMD-SHELL
+        - wget --spider http://127.0.0.1:8200/v1/sys/health || exit 1
+      timeout: 5s
+    image: hashicorp/vault:1.16
+    restart: always
+    volumes:
+      - ./vault/vault.json:/vault/config/vault.json
+      - vault-secrets:/vault/file
+version: "3"
+volumes:
+  grafana: null
+  portainer_data: null
+  vault-secrets: null
