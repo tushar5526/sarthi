@@ -7,7 +7,7 @@ services:
     # container name is used internally in code - don't change it
     container_name: sarthi_nginx
     ports:
-      - "80:80"
+      - "${NGINX_PORT:-80}:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -45,7 +45,7 @@ services:
     image: grafana/loki:2.9.5
     restart: always
     ports:
-      - 127.0.0.1:3100:3100
+      - "${LOKI_PORT:-3100}:3100"
     volumes:
       - ./logging-config/loki:/etc/loki
     command: -config.file=/etc/loki/loki-config.yaml
