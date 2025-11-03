@@ -37,7 +37,13 @@ PS: Service Developers can directly jump to the [Developer Guide](#developer-gui
 
 ## Setup Instructions ⚙️
 
+Sarthi supports two reverse proxy options: **Nginx** (traditional) and **Caddy** (with automatic SSL).
+
+> 📖 **Not sure which to choose?** See [PROXY_COMPARISON.md](PROXY_COMPARISON.md) for a detailed comparison.
+
 ### Option 1: Nginx Setup (HTTP)
+
+Best for: Development, internal networks, or if you prefer manual SSL setup.
 
 1. SSH into your server and clone the project.
 
@@ -58,7 +64,7 @@ sudo ./setup-sarthi.sh
 
 ### Option 2: Caddy Setup (Automatic HTTPS/SSL) 🔒✨
 
-For automatic SSL certificate management with Let's Encrypt:
+Best for: Production deployments with public domains where you want automatic SSL.
 
 1. SSH into your server and clone the project.
 
@@ -79,7 +85,9 @@ sudo ./setup-sarthi-caddy.sh
    - Email address for Let's Encrypt notifications
    - Other configuration values
 
-**See [CADDY_SETUP.md](CADDY_SETUP.md) for detailed Caddy configuration and wildcard SSL setup.**
+**📚 Documentation:**
+- [CADDY_SETUP.md](CADDY_SETUP.md) - Detailed Caddy configuration and wildcard SSL setup
+- [PROXY_COMPARISON.md](PROXY_COMPARISON.md) - Compare Nginx vs Caddy to choose the right option
 
 ## Services Installed 🤖
 
