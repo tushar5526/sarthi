@@ -1,0 +1,41 @@
+# Sarthi Caddy Configuration
+# This file provides automatic SSL for all services
+
+# Global options
+{
+    # Email for Let's Encrypt notifications
+    email {$CADDY_EMAIL}
+    
+    # Enable automatic HTTPS
+    auto_https on
+    
+    # Use staging Let's Encrypt for testing (comment out for production)
+    # acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# Vault service
+vault.domain_name {
+    reverse_proxy vault:8200
+}
+
+# Grafana service
+grafana.domain_name {
+    reverse_proxy grafana:3000
+}
+
+# Sarthi API service
+api.domain_name {
+    reverse_proxy sarthi:5000
+}
+
+# Portainer service
+portainer.domain_name {
+    reverse_proxy https://portainer:9443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
+
+# Import additional configuration files for deployments
+import /etc/caddy/conf.d/*.caddy

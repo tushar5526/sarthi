@@ -9,7 +9,8 @@ from fastapi.exceptions import HTTPException
 
 import server.constants as constants
 
-from .utils import ComposeHelper, DeploymentConfig, NginxHelper, SecretsHelper
+from .proxy import get_proxy_helper
+from .utils import ComposeHelper, DeploymentConfig, SecretsHelper
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +42,18 @@ class Deployer:
             self._secrets_helper = SecretsHelper(
                 self._config.project_name, self._config.branch_name, self._project_path
             )
-            self._outer_proxy_conf_location = (
-                os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
-            )
-            self._nginx_helper = NginxHelper(
+            # Get proxy configuration location based on proxy type
+            proxy_type = os.environ.get("PROXY_TYPE", "nginx").lower()
+            if proxy_type == "caddy":
+                self._outer_proxy_conf_location = (
+                    os.environ.get("CADDY_PROXY_CONF_LOCATION") or "/etc/caddy/conf.d"
+                )
+            else:
+                self._outer_proxy_conf_location = (
+                    os.environ.get("NGINX_PROXY_CONF_LOCATION") or "/etc/nginx/conf.d"
+                )
+            
+            self._proxy_helper = get_proxy_helper(
                 config, self._outer_proxy_conf_location, self._project_path
             )
 
@@ -85,24 +94,24 @@ class Deployer:
         self._clone_project()
 
     def _configure_outer_proxy(self):
-        if not self._project_nginx_port:
-            logger.error("Project Proxy not deployed, project_nginx_port is None")
+        if not self._project_proxy_port:
+            logger.error("Project Proxy not deployed, project_proxy_port is None")
             raise HTTPException(
-                "Project Proxy not deployed, project_nginx_port is None"
+                "Project Proxy not deployed, project_proxy_port is None"
             )
-        self._nginx_helper.generate_outer_proxy_conf_file(self._project_nginx_port)
-        self._nginx_helper.reload_nginx()
+        self._proxy_helper.generate_outer_proxy_conf_file(self._project_proxy_port)
+        self._proxy_helper.reload_proxy()
 
     def _deploy_project(self):
         services = self._compose_helper.get_service_ports_config()
-        conf_file_path, urls = self._nginx_helper.generate_project_proxy_conf_file(
+        conf_file_path, urls = self._proxy_helper.generate_project_proxy_conf_file(
             services
         )
         # TODO: Keep retrying finding a new port for race conditions
-        self._project_nginx_port = self._nginx_helper.find_free_port()
+        self._project_proxy_port = self._proxy_helper.find_free_port()
         self._secrets_helper.inject_env_variables(self._project_path)
         self._compose_helper.start_services(
-            self._project_nginx_port, conf_file_path, self._deployment_namespace
+            self._project_proxy_port, conf_file_path, self._deployment_namespace
         )
         return urls
 
@@ -124,7 +133,7 @@ class Deployer:
     def delete_preview_environment(self):
         with self._lock:
             self._compose_helper.remove_services()
-            self._nginx_helper.remove_outer_proxy()
-            self._nginx_helper.reload_nginx()
+            self._proxy_helper.remove_outer_proxy()
+            self._proxy_helper.reload_proxy()
             self._delete_deployment_files()
             self._secrets_helper.cleanup_deployment_variables()

@@ -1,0 +1,113 @@
+version: "3"
+
+services:
+  caddy:
+    image: caddy:2.7-alpine
+    restart: always
+    container_name: sarthi_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./caddy-confs:/etc/caddy/conf.d
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - portainer
+      - vault
+      - sarthi
+      - grafana
+    environment:
+      CADDY_EMAIL: ${CADDY_EMAIL:-admin@example.com}
+
+  sarthi:
+    build: .
+    restart: always
+    volumes:
+      # hack to bypass file resource sharing error
+      # not tested and no support for windows server 💩
+      - ./deployments:${DEPLOYMENTS_MOUNT_DIR:-/deployments}
+      - ./caddy-confs:${CADDY_PROXY_CONF_LOCATION:-/caddy-confs}
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DEPLOYMENTS_MOUNT_DIR: ${DEPLOYMENTS_MOUNT_DIR}
+      CADDY_PROXY_CONF_LOCATION: ${CADDY_PROXY_CONF_LOCATION}
+      PROXY_TYPE: caddy
+      ENV: ${ENV:-local}
+      DOMAIN_NAME: ${DOMAIN_NAME:-localhost}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+      VAULT_BASE_URL: ${VAULT_BASE_URL:-http://vault:8200}
+      SECRET_TEXT: ${SECRET_TEXT}
+    depends_on:
+      - vault
+
+  loki:
+    image: grafana/loki:2.9.5
+    restart: always
+    ports:
+      - 127.0.0.1:3100:3100
+    volumes:
+      - ./logging-config/loki:/etc/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    depends_on:
+      - promtail
+
+  promtail:
+    image: grafana/promtail:main-8978ecf
+    restart: always
+    volumes:
+      - /var/log:/var/log
+      - ./logging-config/promtail:/etc/promtail
+    command: -config.file=/etc/promtail/promtail-config.yaml
+
+  grafana:
+    image: grafana/grafana:10.1.10-ubuntu
+    restart: always
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./logging-config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./logging-config/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - loki
+
+  vault:
+    image: hashicorp/vault:1.16
+    restart: always
+    volumes:
+      - ./vault/vault.json:/vault/config/vault.json
+      - vault-secrets:/vault/file
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+      VAULT_ADDRESS: http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.json
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --spider http://127.0.0.1:8200/v1/sys/health || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  portainer:
+    image: portainer/portainer-ce:2.20.2
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  grafana:
+  portainer_data:
+  vault-secrets:
+  caddy_data:
+  caddy_config:

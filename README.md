@@ -37,6 +37,8 @@ PS: Service Developers can directly jump to the [Developer Guide](#developer-gui
 
 ## Setup Instructions ⚙️
 
+### Option 1: Nginx Setup (HTTP)
+
 1. SSH into your server and clone the project.
 
 ```commandline
@@ -53,6 +55,31 @@ sudo ./setup-sarthi.sh
 
 3. Follow the prompts and specify the values, you will be requested to specify the wild card domain name created earlier.
    (using localhost is possible, but that would require setting up `dnsmaq`)
+
+### Option 2: Caddy Setup (Automatic HTTPS/SSL) 🔒✨
+
+For automatic SSL certificate management with Let's Encrypt:
+
+1. SSH into your server and clone the project.
+
+```commandline
+git clone https://github.com/tushar5526/sarthi.git
+```
+
+2. Run the Caddy setup script.
+
+```commandline
+chmod +x setup-sarthi-caddy.sh
+chmod +x setup-vault.sh
+sudo ./setup-sarthi-caddy.sh
+```
+
+3. Follow the prompts and provide:
+   - Your wildcard domain name
+   - Email address for Let's Encrypt notifications
+   - Other configuration values
+
+**See [CADDY_SETUP.md](CADDY_SETUP.md) for detailed Caddy configuration and wildcard SSL setup.**
 
 ## Services Installed 🤖
 

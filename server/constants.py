@@ -18,3 +18,7 @@ DEFAULT_DEPLOYMENT_PORT_END = 25000
 LOCALHOST = "localhost"
 
 SAMPLE_ENV_FILENAMES = [".env.sample", "env.sample", "sample.env"]
+
+# Proxy types
+PROXY_TYPE_NGINX = "nginx"
+PROXY_TYPE_CADDY = "caddy"
