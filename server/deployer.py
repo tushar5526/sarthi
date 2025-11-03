@@ -30,6 +30,7 @@ class Deployer:
         self._project_path: typing.Final[str] = os.path.join(
             self._DEPLOYMENTS_MOUNT_DIR, self._deployment_namespace
         )
+        self._project_proxy_port = None  # Initialize proxy port
 
         with self._lock:
             if config.rest_action != constants.DELETE:

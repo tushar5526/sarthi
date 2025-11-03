@@ -86,6 +86,7 @@ docker-compose -f docker-compose-caddy.yml up -d promtail loki grafana
 
 # Install Loki Docker Driver
 echo -e "${YELLOW}${POINT} Installing Loki Docker Driver...${NC}"
+echo -e "${YELLOW}⚠️  This will grant permissions to the Loki Docker plugin.${NC}"
 docker plugin install grafana/loki-docker-driver:2.9.1 --alias loki --grant-all-permissions
 
 # Configure Docker Daemon for Loki Logging

@@ -5,6 +5,7 @@ This module provides base classes and implementations for different proxy server
 
 import logging
 import os
+import socket
 import subprocess
 import typing
 from abc import ABC, abstractmethod
@@ -82,10 +83,22 @@ class BaseProxyHelper(ABC):
         """Remove the outer proxy configuration."""
         pass
 
-    @abstractmethod
     def find_free_port(self) -> str:
         """Find a free port for the deployment."""
-        pass
+        current_port = self._start_port
+
+        while current_port <= self._end_port:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.connect((self._host_name, current_port))
+                    s.close()
+                    current_port += 1
+                except ConnectionRefusedError:
+                    self._port = current_port
+                    return str(current_port)
+
+        logger.error("Could not find a free port in the specified range")
+        raise HTTPException(500, "Could not find a free port in the specified range")
 
     @abstractmethod
     def get_conf_file_name(self) -> str:
@@ -160,24 +173,6 @@ class NginxProxyHelper(BaseProxyHelper):
 
     def get_deployment_proxy_path(self) -> str:
         return self._deployment_proxy_path
-
-    def find_free_port(self) -> str:
-        import socket
-
-        current_port = self._start_port
-
-        while current_port <= self._end_port:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                try:
-                    s.connect((self._host_name, current_port))
-                    s.close()
-                    current_port += 1
-                except ConnectionRefusedError:
-                    self._port = current_port
-                    return str(current_port)
-
-        logger.error("Could not find a free port in the specified range")
-        raise HTTPException(500, "Could not find a free port in the specified range")
 
     def generate_outer_proxy_conf_file(self, port: str) -> str:
         port = port or self._port
@@ -291,24 +286,6 @@ class CaddyProxyHelper(BaseProxyHelper):
 
     def get_deployment_proxy_path(self) -> str:
         return self._deployment_proxy_path
-
-    def find_free_port(self) -> str:
-        import socket
-
-        current_port = self._start_port
-
-        while current_port <= self._end_port:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                try:
-                    s.connect((self._host_name, current_port))
-                    s.close()
-                    current_port += 1
-                except ConnectionRefusedError:
-                    self._port = current_port
-                    return str(current_port)
-
-        logger.error("Could not find a free port in the specified range")
-        raise HTTPException(500, "Could not find a free port in the specified range")
 
     def generate_outer_proxy_conf_file(self, port: str) -> str:
         """Generate Caddyfile configuration for outer proxy with automatic SSL."""
